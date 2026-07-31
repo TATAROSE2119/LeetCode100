@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LeetCode 11 盛最多水的容器：双指针算法动态演示">
+    <title>盛最多水的容器 · 双指针可视化</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --surface: rgba(255, 255, 255, .92);
+            --surface-solid: #ffffff;
+            --ink: #172033;
+            --muted: #6f7d94;
+            --line: #dfe6f0;
+            --blue: #2878ff;
+            --blue-soft: #eaf2ff;
+            --cyan: #08a9c9;
+            --cyan-soft: #e5f9fc;
+            --violet: #7357e8;
+            --violet-soft: #f0edff;
+            --amber: #f5a524;
+            --amber-soft: #fff6df;
+            --green: #16a36a;
+            --green-soft: #e8f8f1;
+            --red: #e65454;
+            --red-soft: #fff0f0;
+            --navy: #13213d;
+            --shadow: 0 18px 45px rgba(30, 53, 88, .08);
+            --shadow-sm: 0 8px 24px rgba(30, 53, 88, .07);
+            --radius: 20px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 28px;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 6% 5%, rgba(40,120,255,.10), transparent 25%),
+                radial-gradient(circle at 94% 4%, rgba(115,87,232,.09), transparent 23%),
+                var(--bg);
+            font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+
+        button, input { font: inherit; }
+
+        button:focus-visible, input:focus-visible {
+            outline: 3px solid rgba(40, 120, 255, .22);
+            outline-offset: 2px;
+        }
+
+        .page-shell { max-width: 1680px; margin: 0 auto; }
+
+        .hero {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 22px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: var(--blue);
+            font-size: .75rem;
+            font-weight: 800;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 24px;
+            height: 3px;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--blue), var(--violet));
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.7rem, 2.6vw, 2.55rem);
+            line-height: 1.16;
+            letter-spacing: -.045em;
+        }
+
+        .hero p {
+            max-width: 620px;
+            margin: 9px 0 0;
+            color: var(--muted);
+            font-size: .9rem;
+            line-height: 1.7;
+        }
+
+        .complexity-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+        .chip {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            background: rgba(255,255,255,.72);
+            font-size: .74rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .chip strong { color: var(--ink); }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 18px;
+            padding: 13px 15px;
+            border: 1px solid rgba(223,230,240,.9);
+            border-radius: 18px;
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(12px);
+        }
+
+        .input-wrap {
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-wrap label {
+            flex: 0 0 auto;
+            color: var(--muted);
+            font-size: .76rem;
+            font-weight: 750;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            min-width: 160px;
+            padding: 10px 13px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            color: var(--ink);
+            background: #f8faff;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: .82rem;
+            transition: .2s ease;
+        }
+
+        .input-wrap input:focus { border-color: var(--blue); background: #fff; }
+
+        .actions { display: flex; align-items: center; gap: 8px; }
+
+        .btn {
+            min-height: 38px;
+            padding: 0 13px;
+            border: 1px solid transparent;
+            border-radius: 11px;
+            background: transparent;
+            color: var(--ink);
+            cursor: pointer;
+            font-size: .76rem;
+            font-weight: 750;
+            transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 7px 16px rgba(30,53,88,.10); }
+        .btn:active:not(:disabled) { transform: translateY(0); }
+        .btn:disabled { cursor: not-allowed; opacity: .42; }
+        .btn-ghost { border-color: var(--line); background: #fff; }
+        .btn-step { border-color: #d8d0ff; color: var(--violet); background: var(--violet-soft); }
+        .btn-primary { min-width: 84px; color: #fff; background: linear-gradient(135deg, var(--blue), #6254e9); }
+        .btn-primary.running { background: linear-gradient(135deg, #eb7e38, var(--amber)); }
+
+        .speed {
+            min-width: 58px;
+            padding: 0 10px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            color: var(--muted);
+            background: #fff;
+            cursor: pointer;
+            font-size: .72rem;
+            font-weight: 800;
+        }
+
+        .error {
+            display: none;
+            grid-column: 1 / -1;
+            margin: -3px 0 0;
+            color: var(--red);
+            font-size: .74rem;
+            font-weight: 650;
+        }
+
+        .error.show { display: block; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 288px minmax(520px, 1fr) 330px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .column-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 0 0 12px;
+            font-size: .76rem;
+            font-weight: 850;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .column-title span {
+            color: var(--muted);
+            font-size: .67rem;
+            font-weight: 650;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .left-column, .right-column { position: sticky; top: 18px; }
+
+        .card {
+            border: 1px solid rgba(223,230,240,.95);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+        }
+
+        .principle { padding: 19px; }
+
+        .section + .section { margin-top: 20px; }
+
+        .section-kicker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: .76rem;
+            font-weight: 800;
+        }
+
+        .section-kicker .num {
+            display: grid;
+            width: 22px;
+            height: 22px;
+            place-items: center;
+            border-radius: 7px;
+            color: var(--blue);
+            background: var(--blue-soft);
+            font-size: .66rem;
+        }
+
+        .section p, .section li {
+            color: #58677e;
+            font-size: .76rem;
+            line-height: 1.72;
+        }
+
+        .section p { margin: 0; }
+        .section ol { margin: 4px 0 0; padding-left: 20px; }
+        .section li + li { margin-top: 5px; }
+        .section li::marker { color: var(--blue); font-weight: 800; }
+
+        .why-box {
+            margin-top: 10px;
+            padding: 11px 12px;
+            border-left: 3px solid var(--amber);
+            border-radius: 4px 10px 10px 4px;
+            color: #7c601f;
+            background: var(--amber-soft);
+            font-size: .72rem;
+            line-height: 1.65;
+        }
+
+        .formula-mini {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid #d9e7ff;
+            border-radius: 11px;
+            color: #315488;
+            background: var(--blue-soft);
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: .7rem;
+            line-height: 1.7;
+        }
+
+        .code-box {
+            margin-top: 10px;
+            padding: 9px 0;
+            overflow: hidden;
+            border-radius: 13px;
+            color: #c8d6ee;
+            background: var(--navy);
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: .66rem;
+            line-height: 1.65;
+        }
+
+        .code-line {
+            display: grid;
+            grid-template-columns: 22px 1fr;
+            gap: 7px;
+            min-height: 22px;
+            padding: 2px 11px;
+            white-space: pre;
+            transition: .2s ease;
+        }
+
+        .code-line .ln { color: #637493; text-align: right; user-select: none; }
+        .code-line.active { color: #fff; background: rgba(40,120,255,.33); }
+        .code-line.active .ln { color: #91bcff; }
+
+        .center-column { min-width: 0; }
+
+        .status-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .metric {
+            min-width: 0;
+            padding: 13px 14px;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: var(--surface-solid);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-label {
+            overflow: hidden;
+            color: var(--muted);
+            font-size: .65rem;
+            font-weight: 750;
+            letter-spacing: .04em;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+            overflow: hidden;
+            color: var(--ink);
+            font-size: 1.23rem;
+            font-weight: 850;
+            letter-spacing: -.03em;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .metric-value.blue { color: var(--blue); }
+        .metric-value.violet { color: var(--violet); }
+        .metric-value.green { color: var(--green); }
+
+        .visual-card { padding: 18px; }
+
+        .visual-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .phase-name {
+            margin: 0 0 4px;
+            font-size: .96rem;
+            font-weight: 850;
+        }
+
+        .phase-desc { margin: 0; color: var(--muted); font-size: .74rem; line-height: 1.5; }
+
+        .iteration-pill {
+            flex: 0 0 auto;
+            padding: 7px 10px;
+            border-radius: 999px;
+            color: var(--blue);
+            background: var(--blue-soft);
+            font-size: .68rem;
+            font-weight: 800;
+        }
+
+        .phase-track {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin: 13px 0 10px;
+        }
+
+        .phase-step {
+            padding: 7px 8px;
+            border-radius: 9px;
+            color: #98a3b5;
+            background: #f3f5f9;
+            font-size: .65rem;
+            font-weight: 750;
+            text-align: center;
+            transition: .2s ease;
+        }
+
+        .phase-step.active.measure { color: var(--blue); background: var(--blue-soft); }
+        .phase-step.active.judge { color: var(--green); background: var(--green-soft); }
+        .phase-step.active.move { color: var(--violet); background: var(--violet-soft); }
+
+        .chart-shell {
+            position: relative;
+            height: 360px;
+            margin-top: 5px;
+            padding: 22px 14px 10px;
+            overflow: hidden;
+            border: 1px solid #e4eaf3;
+            border-radius: 17px;
+            background:
+                repeating-linear-gradient(to bottom, transparent 0, transparent 64px, rgba(119,139,170,.10) 65px),
+                linear-gradient(180deg, #fafdff, #f6f9fd);
+        }
+
+        .chart-shell::after {
+            content: "";
+            position: absolute;
+            right: 14px;
+            bottom: 42px;
+            left: 14px;
+            height: 1px;
+            background: #bfc9d8;
+        }
+
+        .bars-area {
+            position: absolute;
+            z-index: 1;
+            top: 24px;
+            right: 14px;
+            bottom: 43px;
+            left: 14px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .water {
+            position: absolute;
+            z-index: 1;
+            bottom: 0;
+            min-width: 2px;
+            border: 1px solid rgba(40,120,255,.36);
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            opacity: 0;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.24), transparent 20%),
+                linear-gradient(180deg, rgba(79,180,255,.50), rgba(40,120,255,.24));
+            box-shadow: inset 0 3px 0 rgba(255,255,255,.34);
+            transform-origin: bottom;
+            transition: left .45s ease, width .45s ease, height .45s ease, opacity .25s ease;
+        }
+
+        .water.visible { opacity: 1; }
+        .water.preview { opacity: .34; filter: saturate(.7); }
+
+        .water::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            right: 0;
+            left: 0;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(97,191,255,.72);
+            animation: wave 2.2s ease-in-out infinite;
+        }
+
+        @keyframes wave { 0%,100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+
+        .best-frame {
+            position: absolute;
+            z-index: 0;
+            bottom: 0;
+            border: 2px dashed rgba(245,165,36,.58);
+            border-bottom: none;
+            border-radius: 7px 7px 0 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: .4s ease;
+        }
+
+        .best-frame.visible { opacity: 1; }
+
+        .bar-slot {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex: 1 1 0;
+            height: 100%;
+            min-width: 0;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .bar {
+            position: relative;
+            width: clamp(5px, 22%, 16px);
+            min-width: 4px;
+            min-height: 2px;
+            border-radius: 5px 5px 1px 1px;
+            background: #9ba9bd;
+            box-shadow: inset 1px 0 rgba(255,255,255,.38);
+            transition: height .4s ease, width .25s ease, background .25s ease, box-shadow .25s ease, transform .25s ease;
+        }
+
+        .bar-slot.best .bar { background: var(--amber); box-shadow: 0 0 0 4px rgba(245,165,36,.11); }
+        .bar-slot.left .bar { width: clamp(8px, 34%, 21px); background: var(--cyan); box-shadow: 0 0 0 5px rgba(8,169,201,.12); }
+        .bar-slot.right .bar { width: clamp(8px, 34%, 21px); background: var(--violet); box-shadow: 0 0 0 5px rgba(115,87,232,.12); }
+        .bar-slot.left.right .bar { background: linear-gradient(90deg, var(--cyan) 0 50%, var(--violet) 50%); }
+
+        .bar-value {
+            position: absolute;
+            top: -23px;
+            left: 50%;
+            color: #77859b;
+            font-size: .63rem;
+            font-weight: 800;
+            transform: translateX(-50%);
+        }
+
+        .bar-slot.left .bar-value { color: var(--cyan); }
+        .bar-slot.right .bar-value { color: var(--violet); }
+
+        .pointer-badge {
+            position: absolute;
+            z-index: 5;
+            top: -17px;
+            left: 50%;
+            display: none;
+            padding: 3px 6px;
+            border-radius: 7px;
+            color: #fff;
+            font-size: .57rem;
+            font-weight: 850;
+            line-height: 1;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        .bar-slot.left .pointer-badge { display: block; background: var(--cyan); }
+        .bar-slot.right .pointer-badge { display: block; background: var(--violet); }
+        .bar-slot.left.right .pointer-badge { background: linear-gradient(90deg, var(--cyan), var(--violet)); }
+
+        .bar-index {
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            color: #8793a6;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: .62rem;
+            transform: translateX(-50%);
+        }
+
+        .formula-panel {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            margin-top: 12px;
+            padding: 13px 15px;
+            border: 1px solid #dce8fa;
+            border-radius: 14px;
+            background: #f7faff;
+        }
+
+        .formula-main {
+            overflow-x: auto;
+            color: #40516b;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: clamp(.69rem, 1.1vw, .81rem);
+            line-height: 1.7;
+            white-space: nowrap;
+        }
+
+        .formula-main strong { color: var(--blue); }
+
+        .formula-result {
+            min-width: 70px;
+            padding: 8px 11px;
+            border-radius: 11px;
+            color: var(--blue);
+            background: var(--blue-soft);
+            font-size: 1.05rem;
+            font-weight: 900;
+            text-align: center;
+        }
+
+        .formula-result.new-best { color: var(--green); background: var(--green-soft); animation: pop .45s ease; }
+
+        @keyframes pop { 50% { transform: scale(1.09); } }
+
+        .progress-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+        .progress-track { flex: 1; height: 6px; overflow: hidden; border-radius: 99px; background: #edf1f6; }
+        .progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--violet)); transition: width .35s ease; }
+        .progress-text { min-width: 58px; color: var(--muted); font-size: .66rem; font-weight: 750; text-align: right; }
+
+        .log-card { height: calc(100vh - 195px); min-height: 540px; display: flex; flex-direction: column; }
+
+        .log-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 17px 13px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .log-head h2 { margin: 0; font-size: .85rem; }
+
+        .live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: .64rem;
+            font-weight: 750;
+        }
+
+        .live-dot::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 0 4px rgba(22,163,106,.12);
+        }
+
+        .log-list {
+            flex: 1;
+            padding: 9px 9px 15px;
+            overflow-y: auto;
+            scrollbar-color: #cbd5e1 transparent;
+            scrollbar-width: thin;
+        }
+
+        .log-item {
+            display: grid;
+            grid-template-columns: 28px minmax(0,1fr);
+            gap: 9px;
+            padding: 9px 8px;
+            border-radius: 11px;
+            transition: .2s ease;
+        }
+
+        .log-item + .log-item { margin-top: 2px; }
+        .log-item.current { background: #f1f6ff; }
+
+        .log-seq {
+            display: grid;
+            width: 25px;
+            height: 25px;
+            place-items: center;
+            border-radius: 8px;
+            color: #78869b;
+            background: #edf1f6;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: .61rem;
+            font-weight: 800;
+        }
+
+        .log-item.measure .log-seq { color: var(--blue); background: var(--blue-soft); }
+        .log-item.judge .log-seq { color: var(--green); background: var(--green-soft); }
+        .log-item.move .log-seq { color: var(--violet); background: var(--violet-soft); }
+        .log-item.complete .log-seq { color: #9a6913; background: var(--amber-soft); }
+
+        .log-type { margin-bottom: 3px; color: var(--ink); font-size: .68rem; font-weight: 830; }
+        .log-message { color: var(--muted); font-size: .7rem; line-height: 1.55; word-break: break-word; }
+        .log-item.current .log-message { color: #4b5d78; }
+
+        .log-footer {
+            padding: 11px 16px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            background: #fafbfd;
+            font-size: .66rem;
+            line-height: 1.5;
+        }
+
+        .kbd {
+            display: inline-block;
+            min-width: 19px;
+            margin: 0 2px;
+            padding: 1px 5px;
+            border: 1px solid #cfd7e3;
+            border-bottom-width: 2px;
+            border-radius: 5px;
+            color: #68768a;
+            background: #fff;
+            font-family: inherit;
+            font-size: .6rem;
+            font-weight: 750;
+            text-align: center;
+        }
+
+        @media (max-width: 1270px) {
+            body { padding: 20px; }
+            .workspace { grid-template-columns: 250px minmax(470px, 1fr) 292px; gap: 14px; }
+            .principle { padding: 16px; }
+        }
+
+        @media (max-width: 1040px) {
+            .workspace { grid-template-columns: 250px minmax(480px, 1fr); }
+            .right-column { grid-column: 1 / -1; position: static; }
+            .log-card { height: 360px; min-height: 0; }
+            .right-column .column-title { margin-top: 4px; }
+        }
+
+        @media (max-width: 780px) {
+            body { padding: 14px; }
+            .hero { align-items: flex-start; flex-direction: column; }
+            .complexity-chips { justify-content: flex-start; }
+            .toolbar { grid-template-columns: 1fr; }
+            .actions { flex-wrap: wrap; }
+            .workspace { display: flex; flex-direction: column; }
+            .left-column, .center-column, .right-column { position: static; width: 100%; }
+            .left-column { order: 1; }
+            .center-column { order: 2; }
+            .right-column { order: 3; }
+            .chart-shell { height: 310px; }
+        }
+
+        @media (max-width: 520px) {
+            .hero { margin-bottom: 16px; }
+            .toolbar { padding: 11px; }
+            .input-wrap { align-items: flex-start; flex-direction: column; }
+            .actions { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+            .btn, .speed { min-width: 0; padding: 0 8px; }
+            .status-strip { grid-template-columns: repeat(2, 1fr); }
+            .visual-card { padding: 13px; }
+            .chart-shell { height: 275px; padding-right: 7px; padding-left: 7px; }
+            .bars-area { right: 7px; left: 7px; }
+            .formula-panel { align-items: stretch; grid-template-columns: 1fr; }
+            .formula-result { text-align: left; }
+            .bar-value { font-size: .55rem; }
+            .bar-index { font-size: .54rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+<main class="page-shell">
+    <header class="hero">
+        <div>
+            <div class="eyebrow">LeetCode 11 · Two Pointers</div>
+            <h1>盛最多水的容器</h1>
+            <p>从数组两端向内收缩。每次只移动较短的那根柱子，在一次线性扫描中找到可以盛下的最大水量。</p>
+        </div>
+        <div class="complexity-chips" aria-label="算法复杂度">
+            <span class="chip">时间 <strong>O(n)</strong></span>
+            <span class="chip">空间 <strong>O(1)</strong></span>
+            <span class="chip">策略 <strong>贪心 + 双指针</strong></span>
+        </div>
+    </header>
+
+    <section class="toolbar" aria-label="演示控制台">
+        <div class="input-wrap">
+            <label for="heightInput">柱高数组</label>
+            <input id="heightInput" type="text" value="1, 8, 6, 2, 5, 4, 8, 3, 7" autocomplete="off" spellcheck="false" aria-describedby="inputError">
+        </div>
+        <div class="actions">
+            <button class="btn btn-ghost" id="randomBtn" type="button">随机</button>
+            <button class="btn btn-ghost" id="resetBtn" type="button">重置</button>
+            <button class="btn btn-step" id="prevBtn" type="button" aria-label="上一步">← 上一步</button>
+            <button class="btn btn-step" id="nextBtn" type="button" aria-label="下一步">下一步 →</button>
+            <button class="btn btn-primary" id="autoBtn" type="button">▶ 自动播放</button>
+            <button class="speed" id="speedBtn" type="button" title="切换播放速度">1×</button>
+        </div>
+        <p class="error" id="inputError" role="alert"></p>
+    </section>
+
+    <div class="workspace">
+        <aside class="left-column">
+            <h2 class="column-title">算法原理 <span>Why it works</span></h2>
+            <article class="card principle">
+                <section class="section">
+                    <div class="section-kicker"><span class="num">01</span> 容器面积</div>
+                    <p>两根柱子的距离决定<strong>宽度</strong>，较短柱子的高度决定水面上限。</p>
+                    <div class="formula-mini">area = (right - left)<br>　　× min(h[left], h[right])</div>
+                </section>
+
+                <section class="section">
+                    <div class="section-kicker"><span class="num">02</span> 双指针策略</div>
+                    <ol>
+                        <li>指针从最左、最右两端开始。</li>
+                        <li>计算当前容器面积并更新最大值。</li>
+                        <li>移动较短边，寻找更高的边界。</li>
+                        <li>两指针相遇时结束。</li>
+                    </ol>
+                    <div class="why-box"><strong>为什么移动短边？</strong><br>宽度一定会变小。如果保留短边，容器高度不可能突破这块短板，面积也不可能变大；只有换掉短边才存在改进机会。</div>
+                </section>
+
+                <section class="section">
+                    <div class="section-kicker"><span class="num">03</span> 代码执行位置</div>
+                    <div class="code-box" id="codeBox" aria-label="双指针伪代码">
+                        <div class="code-line" data-line="1"><span class="ln">1</span><span>left, right = 0, n - 1</span></div>
+                        <div class="code-line" data-line="2"><span class="ln">2</span><span>answer = 0</span></div>
+                        <div class="code-line" data-line="3"><span class="ln">3</span><span>while left &lt; right:</span></div>
+                        <div class="code-line" data-line="4"><span class="ln">4</span><span>    width = right - left</span></div>
+                        <div class="code-line" data-line="5"><span class="ln">5</span><span>    h = min(height[left],</span></div>
+                        <div class="code-line" data-line="5"><span class="ln"></span><span>            height[right])</span></div>
+                        <div class="code-line" data-line="6"><span class="ln">6</span><span>    area = width * h</span></div>
+                        <div class="code-line" data-line="7"><span class="ln">7</span><span>    answer = max(answer, area)</span></div>
+                        <div class="code-line" data-line="8"><span class="ln">8</span><span>    if height[left] &lt;= height[right]:</span></div>
+                        <div class="code-line" data-line="9"><span class="ln">9</span><span>        left += 1</span></div>
+                        <div class="code-line" data-line="10"><span class="ln">10</span><span>    else: right -= 1</span></div>
+                        <div class="code-line" data-line="11"><span class="ln">11</span><span>return answer</span></div>
+                    </div>
+                </section>
+            </article>
+        </aside>
+
+        <section class="center-column" aria-label="算法动态展示">
+            <h2 class="column-title">动态展示流程 <span id="arraySummary">9 根柱子</span></h2>
+
+            <div class="status-strip">
+                <article class="metric">
+                    <div class="metric-label">左指针 left</div>
+                    <div class="metric-value blue" id="leftMetric">0</div>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">右指针 right</div>
+                    <div class="metric-value violet" id="rightMetric">8</div>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">当前面积</div>
+                    <div class="metric-value" id="areaMetric">—</div>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">历史最大面积</div>
+                    <div class="metric-value green" id="bestMetric">0</div>
+                </article>
+            </div>
+
+            <article class="card visual-card">
+                <div class="visual-head">
+                    <div>
+                        <h2 class="phase-name" id="phaseName">初始化双指针</h2>
+                        <p class="phase-desc" id="phaseDesc">left 在数组开头，right 在数组末尾，准备开始搜索。</p>
+                    </div>
+                    <div class="iteration-pill" id="iterationPill">准备阶段</div>
+                </div>
+
+                <div class="phase-track" aria-label="单次循环的三个阶段">
+                    <div class="phase-step measure" data-phase="measure">1 · 测量面积</div>
+                    <div class="phase-step judge" data-phase="judge">2 · 更新最优</div>
+                    <div class="phase-step move" data-phase="move">3 · 移动短边</div>
+                </div>
+
+                <div class="chart-shell" id="chartShell" aria-label="柱高与容器水量图">
+                    <div class="bars-area" id="barsArea">
+                        <div class="best-frame" id="bestFrame"></div>
+                        <div class="water" id="water"></div>
+                    </div>
+                </div>
+
+                <div class="formula-panel">
+                    <div class="formula-main" id="formulaMain">等待计算：宽度 × 较短边高度</div>
+                    <div class="formula-result" id="formulaResult">—</div>
+                </div>
+
+                <div class="progress-row">
+                    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="progress-text" id="progressText">0 / 0</div>
+                </div>
+            </article>
+        </section>
+
+        <aside class="right-column">
+            <h2 class="column-title">执行日志 <span>Execution log</span></h2>
+            <article class="card log-card">
+                <div class="log-head">
+                    <h2>指针决策记录</h2>
+                    <span class="live-dot">实时同步</span>
+                </div>
+                <div class="log-list" id="logList" aria-live="polite"></div>
+                <div class="log-footer">
+                    快捷键：<span class="kbd">←</span> 上一步　<span class="kbd">→</span> 下一步　<span class="kbd">Space</span> 播放 / 暂停
+                </div>
+            </article>
+        </aside>
+    </div>
+</main>
+
+<script>
+    const els = {
+        input: document.getElementById('heightInput'),
+        inputError: document.getElementById('inputError'),
+        randomBtn: document.getElementById('randomBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        prevBtn: document.getElementById('prevBtn'),
+        nextBtn: document.getElementById('nextBtn'),
+        autoBtn: document.getElementById('autoBtn'),
+        speedBtn: document.getElementById('speedBtn'),
+        leftMetric: document.getElementById('leftMetric'),
+        rightMetric: document.getElementById('rightMetric'),
+        areaMetric: document.getElementById('areaMetric'),
+        bestMetric: document.getElementById('bestMetric'),
+        phaseName: document.getElementById('phaseName'),
+        phaseDesc: document.getElementById('phaseDesc'),
+        iterationPill: document.getElementById('iterationPill'),
+        barsArea: document.getElementById('barsArea'),
+        water: document.getElementById('water'),
+        bestFrame: document.getElementById('bestFrame'),
+        formulaMain: document.getElementById('formulaMain'),
+        formulaResult: document.getElementById('formulaResult'),
+        progressFill: document.getElementById('progressFill'),
+        progressText: document.getElementById('progressText'),
+        logList: document.getElementById('logList'),
+        arraySummary: document.getElementById('arraySummary')
+    };
+
+    const speedOptions = [
+        { label: '0.5×', delay: 1700 },
+        { label: '1×', delay: 1050 },
+        { label: '1.5×', delay: 680 },
+        { label: '2×', delay: 420 }
+    ];
+
+    let heights = [];
+    let events = [];
+    let cursor = 0;
+    let timer = null;
+    let speedIndex = 1;
+
+    function parseInput(raw) {
+        const parts = raw.trim().split(/[\s,，]+/).filter(Boolean);
+        if (parts.length < 2) throw new Error('至少需要输入 2 个柱高。');
+        if (parts.length > 18) throw new Error('为了保证图表清晰，最多演示 18 个柱高。');
+        const values = parts.map(Number);
+        if (values.some(value => !Number.isInteger(value) || value < 0)) {
+            throw new Error('柱高必须是大于或等于 0 的整数。');
+        }
+        if (values.every(value => value === 0)) throw new Error('请至少输入一个大于 0 的柱高。');
+        return values;
+    }
+
+    function buildEvents(values) {
+        const result = [];
+        let left = 0;
+        let right = values.length - 1;
+        let best = 0;
+        let bestPair = null;
+        let iteration = 0;
+
+        result.push({
+            type: 'init', left, right, best, bestPair, iteration,
+            activeLines: [1, 2],
+            title: '初始化双指针',
+            message: `left = 0，right = ${right}，最大面积 answer = 0。`
+        });
+
+        while (left < right) {
+            iteration += 1;
+            const leftHeight = values[left];
+            const rightHeight = values[right];
+            const width = right - left;
+            const limitHeight = Math.min(leftHeight, rightHeight);
+            const area = width * limitHeight;
+            const previousBest = best;
+            const previousBestPair = bestPair ? [...bestPair] : null;
+
+            result.push({
+                type: 'measure', left, right, leftHeight, rightHeight, width, limitHeight,
+                area, best: previousBest, bestPair: previousBestPair, iteration,
+                activeLines: [3, 4, 5, 6],
+                title: '测量当前容器',
+                message: `索引 ${left} 与 ${right}：宽 ${width}，限高 ${limitHeight}，面积 ${width} × ${limitHeight} = ${area}。`
+            });
+
+            const isNewBest = area > best;
+            if (isNewBest) {
+                best = area;
+                bestPair = [left, right];
+            }
+            result.push({
+                type: 'judge', left, right, leftHeight, rightHeight, width, limitHeight,
+                area, previousBest, best, bestPair: bestPair ? [...bestPair] : null,
+                isNewBest, iteration, activeLines: [7],
+                title: isNewBest ? '刷新最大面积' : '保留当前最优解',
+                message: isNewBest
+                    ? `${area} > ${previousBest}，最大面积更新为 ${area}，最优边界是 [${left}, ${right}]。`
+                    : `${area} ≤ ${previousBest}，最大面积仍为 ${best}。`
+            });
+
+            const oldLeft = left;
+            const oldRight = right;
+            let moved;
+            let reason;
+            let activeLines;
+            if (leftHeight <= rightHeight) {
+                left += 1;
+                moved = 'left';
+                reason = leftHeight === rightHeight
+                    ? `两边同高 ${leftHeight}，按规则移动 left：${oldLeft} → ${left}`
+                    : `左边 ${leftHeight} ≤ 右边 ${rightHeight}，移动短边 left：${oldLeft} → ${left}`;
+                activeLines = [8, 9];
+            } else {
+                right -= 1;
+                moved = 'right';
+                reason = `右边 ${rightHeight} < 左边 ${leftHeight}，移动短边 right：${oldRight} → ${right}`;
+                activeLines = [8, 10];
+            }
+
+            result.push({
+                type: 'move', left, right, oldLeft, oldRight, moved, leftHeight, rightHeight,
+                area, best, bestPair: bestPair ? [...bestPair] : null, iteration,
+                activeLines, title: moved === 'left' ? '移动左指针' : '移动右指针',
+                message: `${reason}。宽度缩小，继续寻找可能更高的边界。`
+            });
+        }
+
+        result.push({
+            type: 'complete', left, right, best, bestPair: bestPair ? [...bestPair] : null,
+            iteration, activeLines: [11], title: '搜索完成',
+            message: `left 与 right 在索引 ${left} 相遇，最大面积为 ${best}${bestPair ? `，由索引 ${bestPair[0]} 与 ${bestPair[1]} 组成` : ''}。`
+        });
+        return result;
+    }
+
+    function resetVisualization() {
+        stopAuto();
+        try {
+            heights = parseInput(els.input.value);
+            els.inputError.classList.remove('show');
+            els.input.removeAttribute('aria-invalid');
+        } catch (error) {
+            els.inputError.textContent = error.message;
+            els.inputError.classList.add('show');
+            els.input.setAttribute('aria-invalid', 'true');
+            return;
+        }
+        events = buildEvents(heights);
+        cursor = 0;
+        render();
+    }
+
+    function render() {
+        const event = events[cursor];
+        if (!event) return;
+
+        renderMetrics(event);
+        renderPhase(event);
+        renderBars(event);
+        renderFormula(event);
+        renderCode(event.activeLines || []);
+        renderLogs();
+        renderProgress();
+        updateControls();
+        els.arraySummary.textContent = `${heights.length} 根柱子 · 最大高度 ${Math.max(...heights)}`;
+    }
+
+    function renderMetrics(event) {
+        els.leftMetric.textContent = event.left;
+        els.rightMetric.textContent = event.right;
+        els.areaMetric.textContent = ['measure', 'judge'].includes(event.type) ? event.area : '—';
+        els.bestMetric.textContent = event.best;
+    }
+
+    function renderPhase(event) {
+        const descriptions = {
+            init: 'left 在数组开头，right 在数组末尾，准备开始搜索。',
+            measure: `当前宽度为 ${event.width}，水位由较短边 ${event.limitHeight} 限制。`,
+            judge: event.isNewBest ? '当前面积更大，记录新的最优边界。' : '当前面积没有超过历史最大值。',
+            move: event.moved === 'left' ? '左边更短（或等高），将 left 向右移动一格。' : '右边更短，将 right 向左移动一格。',
+            complete: `所有候选边界已检查完毕，答案是 ${event.best}。`
+        };
+        els.phaseName.textContent = event.title;
+        els.phaseDesc.textContent = descriptions[event.type];
+        els.iterationPill.textContent = event.type === 'init'
+            ? '准备阶段'
+            : event.type === 'complete' ? '演示完成' : `第 ${event.iteration} 轮循环`;
+
+        document.querySelectorAll('.phase-step').forEach(step => {
+            step.classList.toggle('active', step.dataset.phase === event.type);
+        });
+    }
+
+    function renderBars(event) {
+        els.barsArea.querySelectorAll('.bar-slot').forEach(slot => slot.remove());
+        const maxHeight = Math.max(...heights, 1);
+        const chartHeight = els.barsArea.clientHeight || 290;
+
+        heights.forEach((height, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'bar-slot';
+            slot.dataset.index = index;
+            if (index === event.left) slot.classList.add('left');
+            if (index === event.right) slot.classList.add('right');
+            if (event.bestPair && event.bestPair.includes(index)) slot.classList.add('best');
+
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = `${Math.max(2, (height / maxHeight) * chartHeight)}px`;
+            bar.innerHTML = `<span class="bar-value">${height}</span>`;
+
+            const pointer = document.createElement('span');
+            pointer.className = 'pointer-badge';
+            pointer.textContent = index === event.left && index === event.right
+                ? 'L · R' : index === event.left ? 'L' : 'R';
+
+            const indexLabel = document.createElement('span');
+            indexLabel.className = 'bar-index';
+            indexLabel.textContent = index;
+
+            slot.append(bar, pointer, indexLabel);
+            els.barsArea.appendChild(slot);
+        });
+
+        requestAnimationFrame(() => {
+            positionWater(event, maxHeight);
+            positionBestFrame(event, maxHeight);
+        });
+    }
+
+    function slotCenter(index) {
+        const slot = els.barsArea.querySelector(`.bar-slot[data-index="${index}"]`);
+        if (!slot) return 0;
+        return slot.offsetLeft + slot.offsetWidth / 2;
+    }
+
+    function positionWater(event, maxHeight) {
+        if (event.left >= event.right || event.type === 'init' || event.type === 'complete') {
+            els.water.classList.remove('visible', 'preview');
+            return;
+        }
+
+        const leftX = slotCenter(event.left);
+        const rightX = slotCenter(event.right);
+        let limitHeight;
+        if (['measure', 'judge'].includes(event.type)) {
+            limitHeight = event.limitHeight;
+        } else {
+            limitHeight = Math.min(heights[event.left], heights[event.right]);
+        }
+        els.water.style.left = `${leftX}px`;
+        els.water.style.width = `${Math.max(2, rightX - leftX)}px`;
+        els.water.style.height = `${Math.max(2, (limitHeight / maxHeight) * els.barsArea.clientHeight)}px`;
+        els.water.classList.toggle('preview', event.type === 'move');
+        els.water.classList.add('visible');
+    }
+
+    function positionBestFrame(event, maxHeight) {
+        if (!event.bestPair || event.bestPair[0] === event.bestPair[1]) {
+            els.bestFrame.classList.remove('visible');
+            return;
+        }
+        const [left, right] = event.bestPair;
+        const leftX = slotCenter(left);
+        const rightX = slotCenter(right);
+        const height = Math.min(heights[left], heights[right]);
+        els.bestFrame.style.left = `${leftX}px`;
+        els.bestFrame.style.width = `${Math.max(2, rightX - leftX)}px`;
+        els.bestFrame.style.height = `${Math.max(2, (height / maxHeight) * els.barsArea.clientHeight)}px`;
+        els.bestFrame.classList.add('visible');
+    }
+
+    function renderFormula(event) {
+        els.formulaResult.classList.remove('new-best');
+        if (['measure', 'judge'].includes(event.type)) {
+            els.formulaMain.innerHTML = `(${event.right} - ${event.left}) × min(${event.leftHeight}, ${event.rightHeight}) = <strong>${event.width} × ${event.limitHeight}</strong>`;
+            els.formulaResult.textContent = event.area;
+            if (event.type === 'judge' && event.isNewBest) els.formulaResult.classList.add('new-best');
+            return;
+        }
+        if (event.type === 'move' && event.left < event.right) {
+            els.formulaMain.textContent = `新边界 [${event.left}, ${event.right}] 已就位，等待下一轮测量`;
+            els.formulaResult.textContent = '待计算';
+            return;
+        }
+        if (event.type === 'complete') {
+            const pairText = event.bestPair ? `[${event.bestPair[0]}, ${event.bestPair[1]}]` : '—';
+            els.formulaMain.innerHTML = `最优边界 <strong>${pairText}</strong>，最终最大面积`;
+            els.formulaResult.textContent = event.best;
+            els.formulaResult.classList.add('new-best');
+            return;
+        }
+        els.formulaMain.textContent = '等待计算：宽度 × 较短边高度';
+        els.formulaResult.textContent = '—';
+    }
+
+    function renderCode(lines) {
+        document.querySelectorAll('.code-line').forEach(line => {
+            line.classList.toggle('active', lines.includes(Number(line.dataset.line)));
+        });
+    }
+
+    function renderLogs() {
+        const visibleEvents = events.slice(0, cursor + 1);
+        els.logList.innerHTML = '';
+        visibleEvents.forEach((event, index) => {
+            const item = document.createElement('div');
+            item.className = `log-item ${event.type}${index === cursor ? ' current' : ''}`;
+            const typeNames = {
+                init: '初始化', measure: '测量面积', judge: '比较最优值', move: '移动指针', complete: '完成'
+            };
+            item.innerHTML = `
+                <div class="log-seq">${String(index).padStart(2, '0')}</div>
+                <div>
+                    <div class="log-type">${typeNames[event.type]}</div>
+                    <div class="log-message">${event.message}</div>
+                </div>`;
+            els.logList.appendChild(item);
+        });
+        requestAnimationFrame(() => { els.logList.scrollTop = els.logList.scrollHeight; });
+    }
+
+    function renderProgress() {
+        const total = Math.max(events.length - 1, 1);
+        const percent = Math.min(100, (cursor / total) * 100);
+        els.progressFill.style.width = `${percent}%`;
+        els.progressText.textContent = `${cursor} / ${events.length - 1}`;
+    }
+
+    function updateControls() {
+        els.prevBtn.disabled = cursor <= 0;
+        els.nextBtn.disabled = cursor >= events.length - 1;
+        els.autoBtn.disabled = cursor >= events.length - 1 && !timer;
+    }
+
+    function nextStep() {
+        if (cursor < events.length - 1) {
+            cursor += 1;
+            render();
+        }
+        if (cursor >= events.length - 1) stopAuto();
+    }
+
+    function previousStep() {
+        stopAuto();
+        if (cursor > 0) {
+            cursor -= 1;
+            render();
+        }
+    }
+
+    function toggleAuto() {
+        if (timer) {
+            stopAuto();
+            return;
+        }
+        if (cursor >= events.length - 1) cursor = 0;
+        els.autoBtn.textContent = 'Ⅱ 暂停';
+        els.autoBtn.classList.add('running');
+        nextStep();
+        if (cursor < events.length - 1) {
+            timer = window.setInterval(nextStep, speedOptions[speedIndex].delay);
+        }
+    }
+
+    function stopAuto() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        els.autoBtn.textContent = '▶ 自动播放';
+        els.autoBtn.classList.remove('running');
+        updateControls();
+    }
+
+    function cycleSpeed() {
+        speedIndex = (speedIndex + 1) % speedOptions.length;
+        els.speedBtn.textContent = speedOptions[speedIndex].label;
+        if (timer) {
+            window.clearInterval(timer);
+            timer = window.setInterval(nextStep, speedOptions[speedIndex].delay);
+        }
+    }
+
+    function randomize() {
+        const length = 7 + Math.floor(Math.random() * 5);
+        const values = Array.from({ length }, () => 1 + Math.floor(Math.random() * 10));
+        els.input.value = values.join(', ');
+        resetVisualization();
+    }
+
+    els.resetBtn.addEventListener('click', resetVisualization);
+    els.randomBtn.addEventListener('click', randomize);
+    els.prevBtn.addEventListener('click', previousStep);
+    els.nextBtn.addEventListener('click', nextStep);
+    els.autoBtn.addEventListener('click', toggleAuto);
+    els.speedBtn.addEventListener('click', cycleSpeed);
+    els.input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') resetVisualization();
+    });
+
+    document.addEventListener('keydown', event => {
+        if (document.activeElement === els.input) return;
+        if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            nextStep();
+        } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            previousStep();
+        } else if (event.code === 'Space') {
+            event.preventDefault();
+            toggleAuto();
+        }
+    });
+
+    let resizeFrame = null;
+    window.addEventListener('resize', () => {
+        window.cancelAnimationFrame(resizeFrame);
+        resizeFrame = window.requestAnimationFrame(() => renderBars(events[cursor]));
+    });
+
+    resetVisualization();
+</script>
+</body>
+</html>
