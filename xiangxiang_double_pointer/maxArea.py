@@ -1,30 +1,26 @@
 from typing import List
 
 class Solution:
-    def maxArea(self, height: List[int]) -> int:
-        """
-        盛最多水的容器 - 相向双指针
-        思路：左右指针向中间移动，每次移动较矮的一边
-        因为面积由较矮的边决定，移动较高的边不会增加面积
-        时间复杂度: O(n), 空间复杂度: O(1)
-        """
-        left, right = 0, len(height) - 1
-        max_area = 0
+    def maxArea(self,n:int, height: List[int]) -> int:
+        if n==0:
+            return 0
 
-        while left < right:
-            # 当前面积 = 较矮高度 * 宽度
-            h = min(height[left], height[right])
-            w = right - left
-            area = h * w
-            max_area = max(max_area, area)
+        left_pt=0
+        right_pt=n-1
 
-            # 移动较矮的一边
-            if height[left] < height[right]:
-                left += 1
+        ans=0
+        while left_pt <right_pt:
+            width=right_pt-left_pt
+            a=width*min(height[left_pt],height[right_pt])
+            ans=max(a,ans)
+
+            if height[left_pt] <= height[right_pt]:
+                left_pt+=1
             else:
-                right -= 1
+                right_pt-=1
 
-        return max_area
+
+        return ans
 
 
 def main():
@@ -33,7 +29,7 @@ def main():
     height = list(map(int, input().split()))
 
     solution = Solution()
-    print(solution.maxArea(height))
+    print(solution.maxArea(n,height))
 
 
 if __name__ == "__main__":
