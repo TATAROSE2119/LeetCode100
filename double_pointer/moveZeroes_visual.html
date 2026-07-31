@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 283 - 移动零</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-light: #eff6ff;
+            --green: #22c55e;
+            --green-light: #f0fdf4;
+            --red: #ef4444;
+            --red-light: #fef2f2;
+            --yellow: #f59e0b;
+            --yellow-light: #fffbeb;
+            --purple: #8b5cf6;
+            --purple-light: #f5f3ff;
+            --orange: #f97316;
+            --pink: #ec4899;
+            --teal: #14b8a6;
+            --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.04);
+            --radius: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 28px;
+        }
+
+        .container { max-width: 1500px; margin: 0 auto; }
+
+        h1 {
+            text-align: center;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 24px;
+        }
+        .subtitle span {
+            background: var(--purple-light);
+            color: var(--purple);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* 控制面板 */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            padding: 14px 20px;
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .controls label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .controls input {
+            width: 320px;
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            transition: border .2s;
+        }
+        .controls input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+        }
+
+        button {
+            padding: 9px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        button:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        button:active { transform: translateY(0); }
+
+        .btn-run { background: var(--accent); color: #fff; }
+        .btn-step { background: var(--purple); color: #fff; }
+        .btn-auto { background: var(--green); color: #fff; }
+        .btn-speed { background: #fff; color: var(--orange); border: 1.5px solid var(--orange); }
+        .btn-reset { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+
+        /* 进度条 */
+        .progress-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            border-radius: 3px;
+            transition: width .3s;
+            width: 0%;
+        }
+        .progress-text {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* 三栏布局 */
+        .main-layout {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .principle-column {
+            width: 280px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 16px;
+            align-self: stretch;
+        }
+        .center-column {
+            flex: 1;
+            min-width: 0;
+        }
+        .log-panel {
+            width: 320px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 16px;
+            align-self: stretch;
+        }
+        .log-panel .log-area {
+            max-height: calc(100vh - 120px);
+            min-height: 400px;
+        }
+
+        /* 面板 */
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
+        }
+        .panel h3 {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel h3 .dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 算法原理面板 */
+        .principle-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .principle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: background .15s;
+        }
+        .principle-header:hover { background: var(--bg); }
+        .principle-header h3 {
+            font-size: 0.9rem;
+            color: var(--text);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .principle-toggle {
+            font-size: 1.1rem;
+            color: var(--muted);
+            transition: transform .25s;
+        }
+        .principle-panel.collapsed .principle-toggle { transform: rotate(-90deg); }
+        .principle-body {
+            padding: 0 20px 18px;
+            transition: all .3s;
+        }
+        .principle-panel.collapsed .principle-body { display: none; }
+        .principle-body h4 {
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .principle-body p, .principle-body li {
+            font-size: 0.78rem;
+            color: #475569;
+            line-height: 1.7;
+        }
+        .principle-body ol {
+            padding-left: 18px;
+        }
+        .principle-body ol li { margin-bottom: 4px; }
+        .principle-body ol li::marker {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+        .complexity-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .badge.time { background: var(--accent-light); color: var(--accent); }
+        .badge.space { background: var(--purple-light); color: var(--purple); }
+        .principle-note {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: var(--yellow-light);
+            border-radius: 8px;
+            border-left: 3px solid var(--yellow);
+            font-size: 0.76rem;
+            color: #92400e;
+            line-height: 1.6;
+        }
+        .principle-note strong { color: #b45309; }
+
+        /* 数组可视化 */
+        .array-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+            min-height: 80px;
+            padding: 10px 0;
+        }
+        .cell {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            transition: all 0.35s cubic-bezier(.4,0,.2,1);
+            position: relative;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+        .cell .idx {
+            font-size: 0.6rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 1px;
+        }
+        .cell.zero {
+            color: var(--muted);
+            border-color: #e2e8f0;
+            background: #f1f5f9;
+        }
+        .cell.nonzero {
+            border-color: var(--green);
+            background: var(--green-light);
+        }
+        .cell.current-i {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 0 20px rgba(59,130,246,.2);
+            transform: translateY(-8px);
+        }
+        .cell.current-j {
+            border-color: var(--orange);
+            background: var(--orange-light);
+            box-shadow: 0 0 16px rgba(249,115,22,.15);
+        }
+        .cell.swapped {
+            animation: swapBounce 0.5s ease;
+        }
+        .cell.placed {
+            border-color: var(--green);
+            background: var(--green-light);
+        }
+
+        @keyframes swapBounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.15); }
+            60% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        /* 指针指示器 */
+        .pointer-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 28px;
+            margin-bottom: 4px;
+        }
+        .pointer-slot {
+            width: 64px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .pointer-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .pointer-tag.i { background: var(--accent-light); color: var(--accent); }
+        .pointer-tag.j { background: var(--orange-light); color: var(--orange); }
+
+        /* 信息卡片行 */
+        .info-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .info-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            box-shadow: var(--shadow);
+        }
+        .info-card .label {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .info-card .value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .info-card .value.accent { color: var(--accent); }
+        .info-card .value.orange { color: var(--orange); }
+        .info-card .value.green { color: var(--green); }
+
+        /* 日志 */
+        .log-area {
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            line-height: 1.7;
+        }
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(148,163,184,.1);
+        }
+        .log-line .time { color: var(--muted); margin-right: 8px; font-size: 0.7rem; }
+        .log-line.success { color: var(--green); }
+        .log-line.info { color: var(--accent); }
+        .log-line.warn { color: var(--orange); }
+        .log-line.highlight { color: var(--purple); font-weight: 600; }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        .legend span { display: flex; align-items: center; gap: 5px; }
+        .legend .swatch {
+            width: 12px; height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .principle-column { width: 240px; }
+            .log-panel { width: 280px; }
+        }
+        @media (max-width: 900px) {
+            .main-layout { flex-direction: column; }
+            .principle-column { width: 100%; position: static; }
+            .log-panel { width: 100%; position: static; }
+            .log-panel .log-area { max-height: 180px; min-height: 100px; }
+        }
+        @media (max-width: 640px) {
+            body { padding: 12px; }
+            .controls input { width: 200px; }
+            .cell { width: 48px; height: 48px; font-size: 0.9rem; }
+            .pointer-slot { width: 48px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔄 移动零</h1>
+    <p class="subtitle">LeetCode 283 · <span>双指针</span> 原地操作</p>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <label>输入数组：</label>
+        <input type="text" id="inputNums" value="0, 1, 0, 3, 12" placeholder="例如: 0, 1, 0, 3, 12">
+        <button class="btn-run" onclick="initAndRun()">🔄 重置</button>
+        <button class="btn-step" id="btnStep" onclick="step()">⏭ 单步</button>
+        <button class="btn-auto" id="btnAuto" onclick="toggleAuto()">▶ 自动</button>
+        <button class="btn-speed" onclick="changeSpeed()" id="btnSpeed">⏱ 1x</button>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-text" id="progressText">0/0</span>
+    </div>
+
+    <!-- 三栏：原理 + 主内容 + 日志 -->
+    <div class="main-layout">
+        <!-- 最左栏：算法原理 -->
+        <div class="principle-column">
+            <div class="principle-panel" id="principlePanel">
+                <div class="principle-header" onclick="togglePrinciple()">
+                    <h3><span class="dot" style="background:var(--purple)"></span> 算法原理详解</h3>
+                    <span class="principle-toggle" id="principleToggle">▼</span>
+                </div>
+                <div class="principle-body">
+                    <h4>💡 核心思路：双指针</h4>
+                    <p><strong>指针 i</strong>：遍历整个数组。</p>
+                    <p><strong>指针 j</strong>：指向「下一个非零元素应该放置的位置」。</p>
+                    <p>每当 i 遇到<strong>非零元素</strong>，就与 j 处元素<strong>交换</strong>，然后 j 前进。</p>
+                    <p>最终：<strong>[0, j) 全是非零</strong>，[j, n) 全是零。</p>
+                    <div class="complexity-badges">
+                        <span class="badge time">⏱ 时间 O(n)</span>
+                        <span class="badge space">📦 空间 O(1)</span>
+                    </div>
+
+                    <h4 style="margin-top:14px;">📋 算法步骤</h4>
+                    <ol>
+                        <li>初始化 j = 0</li>
+                        <li>i 从 0 遍历到 n−1：</li>
+                        <li>若 nums[i] ≠ 0：<br>交换 nums[i] 与 nums[j]<br>j++</li>
+                        <li>若 nums[i] = 0：<br>跳过，i 继续前进</li>
+                    </ol>
+                    <div class="principle-note">
+                        <strong>🔑 关键洞察：</strong>j 始终 ≤ i，j 左侧全是已处理的非零元素，j 到 i 之间全是零。一次遍历即可完成。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间栏：可视化主内容 -->
+        <div class="center-column">
+            <!-- 信息卡片 -->
+            <div class="info-row">
+                <div class="info-card">
+                    <div class="label">🔵 遍历指针 i</div>
+                    <div class="value accent" id="iVal">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">🟠 放置指针 j</div>
+                    <div class="value orange" id="jVal">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">✅ 已放置非零数</div>
+                    <div class="value green" id="placedVal">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">🔄 当前操作</div>
+                    <div class="value" id="opVal" style="font-size:1rem;">—</div>
+                </div>
+            </div>
+
+            <!-- 数组可视化 -->
+            <div class="panel">
+                <h3><span class="dot" style="background:var(--accent)"></span> 数组状态</h3>
+                <div class="pointer-row" id="pointerRow"></div>
+                <div class="array-row" id="arrayDisplay"></div>
+                <div class="legend">
+                    <span><span class="swatch" style="background:var(--accent)"></span> 遍历指针 i</span>
+                    <span><span class="swatch" style="background:var(--orange)"></span> 放置指针 j</span>
+                    <span><span class="swatch" style="background:var(--green)"></span> 已放置的非零元素</span>
+                    <span><span class="swatch" style="background:#f1f5f9;border:1px solid #e2e8f0"></span> 零元素</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧日志 -->
+        <div class="log-panel panel">
+            <h3><span class="dot" style="background:var(--teal)"></span> 执行日志</h3>
+            <div class="log-area" id="logArea">
+                <div class="log-line"><span class="time">--</span> 等待开始...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============ 状态 ============
+let state = {
+    nums: [],
+    n: 0,
+    i: 0,           // 遍历指针
+    j: 0,           // 放置指针
+    phase: 'init',  // 'init' | 'running' | 'done'
+    stepCount: 0,
+    totalSteps: 0,
+    autoInterval: null,
+    speed: 1000,
+    logs: [],
+    lastSwap: null, // [a, b] recently swapped indices
+    lastAction: ''  // description of last action
+};
+
+function parseNums(str) {
+    return str.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+}
+
+function log(msg, cls = 'info') {
+    const now = new Date().toLocaleTimeString();
+    state.logs.push({ time: now, msg, cls });
+    renderLogs();
+}
+
+function renderLogs() {
+    const area = document.getElementById('logArea');
+    const recent = state.logs.slice(-40);
+    area.innerHTML = recent.map(l =>
+        `<div class="log-line ${l.cls}"><span class="time">${l.time}</span>${l.msg}</div>`
+    ).join('');
+    area.scrollTop = area.scrollHeight;
+}
+
+// ============ 渲染 ============
+function renderAll(animHints = {}) {
+    renderArray(animHints);
+    renderPointers();
+    renderInfoCards();
+    updateProgress();
+}
+
+function renderArray(animHints = {}) {
+    const container = document.getElementById('arrayDisplay');
+    if (!state.nums.length) {
+        container.innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">等待输入...</span>';
+        return;
+    }
+    container.innerHTML = state.nums.map((v, idx) => {
+        let cls = 'cell';
+        if (v === 0) cls += ' zero';
+        else cls += ' nonzero';
+
+        // Animation highlight
+        if (animHints.swapA === idx || animHints.swapB === idx) cls += ' swapped';
+
+        // Current pointers
+        if (state.phase === 'running') {
+            if (idx === state.i && !state.found) cls += ' current-i';
+            if (idx === state.j && !state.found) cls += ' current-j';
+        }
+
+        // Placed non-zero elements (left of j)
+        if (state.phase !== 'init' && idx < state.j && v !== 0) cls += ' placed';
+
+        return `<div class="${cls}"><span>${v}</span><span class="idx">[${idx}]</span></div>`;
+    }).join('');
+}
+
+function renderPointers() {
+    const container = document.getElementById('pointerRow');
+    if (!state.nums.length) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = state.nums.map((_, idx) => {
+        let tags = '';
+        if (state.phase === 'running') {
+            if (idx === state.i) tags += '<span class="pointer-tag i">i</span>';
+            if (idx === state.j) tags += '<span class="pointer-tag j">j</span>';
+        }
+        return `<div class="pointer-slot">${tags}</div>`;
+    }).join('');
+}
+
+function renderInfoCards() {
+    document.getElementById('iVal').textContent = state.phase !== 'init' ? state.i : '—';
+    document.getElementById('jVal').textContent = state.phase !== 'init' ? state.j : '—';
+    document.getElementById('placedVal').textContent = state.phase !== 'init' ? state.j : '—';
+
+    const opEl = document.getElementById('opVal');
+    if (state.lastAction) {
+        opEl.textContent = state.lastAction;
+    } else {
+        opEl.textContent = state.phase === 'done' ? '完成 ✅' : '—';
+    }
+}
+
+function updateProgress() {
+    const total = state.totalSteps;
+    const cur = state.stepCount;
+    const pct = total > 0 ? Math.round(cur / total * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = `${cur}/${total}`;
+}
+
+// ============ 原理面板折叠 ============
+function togglePrinciple() {
+    document.getElementById('principlePanel').classList.toggle('collapsed');
+}
+
+// ============ 算法逻辑 ============
+function initAndRun() {
+    stopAuto();
+    const input = document.getElementById('inputNums').value;
+    const nums = parseNums(input);
+
+    if (nums.length === 0) {
+        log('⚠ 请输入有效的数组', 'warn');
+        return;
+    }
+
+    state = {
+        nums: [...nums],
+        n: nums.length,
+        i: 0,
+        j: 0,
+        phase: 'running',
+        stepCount: 0,
+        totalSteps: nums.length + 1, // one step per element + final
+        autoInterval: null,
+        speed: state.speed || 1000,
+        logs: [],
+        lastSwap: null,
+        lastAction: ''
+    };
+
+    log(`📥 输入数组: [${nums.join(', ')}]`, 'info');
+    log(`🔢 n = ${state.n}，双指针算法开始...`, 'info');
+    log(`📍 初始: i=0, j=0`, 'info');
+
+    renderAll();
+}
+
+function step() {
+    if (state.phase === 'init') return;
+    if (state.phase === 'done') {
+        log('⏹ 算法已结束', 'info');
+        return;
+    }
+
+    state.stepCount++;
+
+    if (state.i >= state.n) {
+        // Done
+        state.phase = 'done';
+        state.lastSwap = null;
+        state.lastAction = '完成 ✅';
+        log(`🏁 完成！[0,${state.j}) 为非零，[${state.j},${state.n}) 为零`, 'success');
+        log(`📊 最终数组: [${state.nums.join(', ')}]`, 'success');
+        renderAll();
+        return;
+    }
+
+    const numI = state.nums[state.i];
+    log(`🔍 处理 i=${state.i}，nums[${state.i}] = ${numI}`, 'info');
+
+    if (numI !== 0) {
+        // Non-zero: need to swap (or same position)
+        if (state.i !== state.j) {
+            // Swap
+            [state.nums[state.i], state.nums[state.j]] = [state.nums[state.j], state.nums[state.i]];
+            state.lastSwap = [state.i, state.j];
+            state.lastAction = `交换 [${state.i}]↔[${state.j}]`;
+            log(`  🔄 交换 nums[${state.i}]=${numI} ↔ nums[${state.j}]=0`, 'highlight');
+            log(`  📍 j 从 ${state.j} → ${state.j + 1}`, 'info');
+            renderAll({ swapA: state.i, swapB: state.j });
+        } else {
+            // i === j, already in place
+            state.lastSwap = null;
+            state.lastAction = `${numI} 已在正确位置`;
+            log(`  ✓ nums[${state.i}]=${numI} 已在正确位置，无需交换`, 'info');
+            renderAll();
+        }
+        state.j++;
+    } else {
+        // Zero: skip
+        state.lastSwap = null;
+        state.lastAction = `跳过 0`;
+        log(`  ⏭ nums[${state.i}]=0，跳过`, 'warn');
+        renderAll();
+    }
+
+    state.i++;
+}
+
+function toggleAuto() {
+    const btn = document.getElementById('btnAuto');
+    if (state.autoInterval) {
+        stopAuto();
+        btn.textContent = '▶ 自动';
+        return;
+    }
+    if (state.phase === 'done') {
+        log('⏹ 算法已结束，请先重置', 'info');
+        return;
+    }
+    if (state.phase === 'init') {
+        initAndRun();
+    }
+    btn.textContent = '⏸ 暂停';
+    state.autoInterval = setInterval(() => {
+        if (state.phase === 'done') {
+            stopAuto();
+            btn.textContent = '▶ 自动';
+            return;
+        }
+        step();
+    }, state.speed);
+}
+
+function stopAuto() {
+    if (state.autoInterval) {
+        clearInterval(state.autoInterval);
+        state.autoInterval = null;
+    }
+    document.getElementById('btnAuto').textContent = '▶ 自动';
+}
+
+function changeSpeed() {
+    const speeds = [2000, 1000, 500, 250, 120];
+    const labels = ['0.5x', '1x', '2x', '4x', '8x'];
+    const current = speeds.indexOf(state.speed);
+    const next = (current + 1) % speeds.length;
+    state.speed = speeds[next];
+    document.getElementById('btnSpeed').textContent = '⏱ ' + labels[next];
+
+    if (state.autoInterval) {
+        stopAuto();
+        toggleAuto();
+    }
+}
+
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        step();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        stopAuto();
+        initAndRun();
+    } else if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        toggleAuto();
+    }
+});
+
+// 初始渲染
+initAndRun();
+</script>
+</body>
+</html>

@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 84 - 柱状图中最大的矩形</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-light: #eff6ff;
+            --green: #22c55e;
+            --green-light: #f0fdf4;
+            --red: #ef4444;
+            --red-light: #fef2f2;
+            --yellow: #f59e0b;
+            --yellow-light: #fffbeb;
+            --purple: #8b5cf6;
+            --purple-light: #f5f3ff;
+            --orange: #f97316;
+            --orange-light: #fff7ed;
+            --pink: #ec4899;
+            --pink-light: #fdf2f8;
+            --teal: #14b8a6;
+            --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.04);
+            --radius: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 28px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* 三栏布局 */
+        .main-layout {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .principle-column {
+            width: 300px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 16px;
+            align-self: stretch;
+        }
+        .principle-column .principle-panel {
+            margin-bottom: 0;
+        }
+        .principle-column .principle-body {
+            grid-template-columns: 1fr;
+        }
+        .center-column {
+            flex: 1;
+            min-width: 0;
+        }
+        .log-panel {
+            width: 320px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 16px;
+            align-self: stretch;
+        }
+        .log-panel .log-area {
+            max-height: calc(100vh - 120px);
+            min-height: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 24px;
+        }
+        .subtitle span {
+            background: var(--purple-light);
+            color: var(--purple);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* 控制面板 */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .controls label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .controls input {
+            width: 300px;
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            transition: border .2s;
+        }
+        .controls input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+        }
+
+        button {
+            padding: 9px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        button:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        button:active { transform: translateY(0); }
+
+        .btn-run { background: var(--accent); color: #fff; }
+        .btn-step { background: var(--purple); color: #fff; }
+        .btn-reset { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+        .btn-auto { background: var(--green); color: #fff; }
+        .btn-speed { background: #fff; color: var(--orange); border: 1.5px solid var(--orange); }
+
+        /* 进度条 */
+        .progress-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            border-radius: 3px;
+            transition: width .3s;
+            width: 0%;
+        }
+        .progress-text {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* 面板 */
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
+        }
+        .panel h3 {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel h3 .dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 图表区 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px dashed var(--border);
+            overflow: hidden;
+        }
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 栈展示 */
+        .stack-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stack-visual {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 3px;
+            align-items: stretch;
+            min-height: 56px;
+            min-width: 160px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            padding: 8px 20px 14px;
+            position: relative;
+        }
+        .stack-visual::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -4px;
+            right: -4px;
+            height: 8px;
+            background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
+            border-radius: 0 0 16px 16px;
+        }
+        .stack-visual.has-items { border-top: 2px dashed var(--border); border-radius: 14px; }
+        .stack-bottom-label, .stack-top-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+        .stack-top-label { margin-bottom: 3px; }
+        .stack-bottom-label { margin-top: 6px; }
+
+        .stack-item {
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            background: var(--yellow-light);
+            border: 1.5px solid var(--yellow);
+            color: #b45309;
+            transition: all 0.3s;
+            padding: 0 12px;
+            z-index: 1;
+        }
+        .stack-item.new {
+            animation: slideDown 0.35s ease-out;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-25px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .stack-empty {
+            color: var(--muted);
+            font-size: 0.82rem;
+            text-align: center;
+            padding: 16px;
+        }
+
+        /* 算法原理面板 */
+        .principle-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .principle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: background .15s;
+        }
+        .principle-header:hover { background: var(--bg); }
+        .principle-header h3 {
+            font-size: 0.9rem;
+            color: var(--text);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .principle-toggle {
+            font-size: 1.1rem;
+            color: var(--muted);
+            transition: transform .25s;
+        }
+        .principle-panel.collapsed .principle-toggle { transform: rotate(-90deg); }
+        .principle-body {
+            padding: 0 20px 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            transition: all .3s;
+        }
+        .principle-panel.collapsed .principle-body { display: none; }
+        .principle-col h4 {
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .principle-col p, .principle-col li {
+            font-size: 0.78rem;
+            color: #475569;
+            line-height: 1.7;
+        }
+        .principle-col ol {
+            padding-left: 18px;
+        }
+        .principle-col ol li { margin-bottom: 4px; }
+        .principle-col ol li::marker {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+        .complexity-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .badge.time {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        .badge.space {
+            background: var(--purple-light);
+            color: var(--purple);
+        }
+        .principle-note {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: var(--yellow-light);
+            border-radius: 8px;
+            border-left: 3px solid var(--yellow);
+            font-size: 0.76rem;
+            color: #92400e;
+            line-height: 1.6;
+        }
+        .principle-note strong { color: #b45309; }
+
+        @media (max-width: 640px) {
+            .principle-body { grid-template-columns: 1fr; }
+        }
+        .info-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .info-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            box-shadow: var(--shadow);
+        }
+        .info-card .label {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .info-card .value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .info-card .value.max { color: var(--green); }
+        .info-card .value.cur { color: var(--accent); }
+
+        /* 日志 */
+        .log-area {
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            line-height: 1.7;
+        }
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(148,163,184,.1);
+        }
+        .log-line .time { color: var(--muted); margin-right: 8px; font-size: 0.7rem; }
+        .log-line.success { color: var(--green); }
+        .log-line.info { color: var(--accent); }
+        .log-line.warn { color: var(--orange); }
+        .log-line.highlight { color: var(--purple); font-weight: 600; }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        .legend span { display: flex; align-items: center; gap: 5px; }
+        .legend .swatch {
+            width: 12px; height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .principle-column { width: 260px; }
+            .log-panel { width: 280px; }
+        }
+        @media (max-width: 900px) {
+            .main-layout { flex-direction: column; }
+            .principle-column { width: 100%; position: static; }
+            .principle-column .principle-body { grid-template-columns: 1fr 1fr; }
+            .log-panel { width: 100%; position: static; }
+            .log-panel .log-area { max-height: 180px; min-height: 100px; }
+        }
+        @media (max-width: 640px) {
+            body { padding: 12px; }
+            .controls input { width: 200px; }
+            .chart-container { height: 200px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📊 柱状图中最大的矩形</h1>
+    <p class="subtitle">LeetCode 84 · <span>单调栈</span> 解法</p>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <label>柱状高度：</label>
+        <input type="text" id="inputHeights" value="2, 1, 5, 6, 2, 3" placeholder="例如: 2, 1, 5, 6, 2, 3">
+        <button class="btn-run" onclick="initAndRun()">🔄 重置</button>
+        <button class="btn-step" id="btnStep" onclick="step()">⏭ 单步</button>
+        <button class="btn-auto" id="btnAuto" onclick="toggleAuto()">▶ 自动</button>
+        <button class="btn-speed" onclick="changeSpeed()" id="btnSpeed">⏱ 1x</button>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-text" id="progressText">0/0</span>
+    </div>
+
+    <!-- 三栏：原理 + 主内容 + 日志 -->
+    <div class="main-layout">
+        <!-- 最左栏：算法原理 -->
+        <div class="principle-column">
+            <div class="principle-panel panel" id="principlePanel">
+                <div class="principle-header" onclick="togglePrinciple()">
+                    <h3><span class="dot" style="background:var(--purple)"></span> 算法原理详解</h3>
+                    <span class="principle-toggle" id="principleToggle">▼</span>
+                </div>
+                <div class="principle-body">
+                    <div class="principle-col">
+                        <h4>💡 核心思路</h4>
+                        <p>对于<strong>每一根柱子</strong>，以它的高度能形成的<strong>最大矩形</strong>，其左右边界分别是左右两边<strong>第一个比它矮的柱子</strong>。</p>
+                        <p>单调递增栈的作用：栈中柱子高度递增，当遇到一个<strong>更矮</strong>的柱子时，栈顶柱子的「右边界」就确定了。</p>
+                        <div class="complexity-badges">
+                            <span class="badge time">⏱ 时间 O(n)</span>
+                            <span class="badge space">📦 空间 O(n)</span>
+                        </div>
+                    </div>
+                    <div class="principle-col">
+                        <h4>📋 算法步骤</h4>
+                        <ol>
+                            <li>遍历每根柱子 + 末尾<strong>哨兵 0</strong></li>
+                            <li>当栈非空 且 <strong>当前高度 < 栈顶高度</strong>时：<br>弹出栈顶，以该高度计算矩形</li>
+                            <li><strong>矩形高度</strong> = 弹出柱子的高度</li>
+                            <li><strong>矩形宽度</strong> = 当前索引 − 新栈顶索引 − 1</li>
+                            <li>更新最大面积</li>
+                            <li>将当前索引入栈</li>
+                        </ol>
+                        <div class="principle-note">
+                            <strong>🔑 关键技巧：</strong>末尾哨兵 0 确保遍历结束后所有柱子都从栈中弹出并计算面积，无需额外处理剩余元素。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间栏：可视化主内容 -->
+        <div class="center-column">
+            <!-- 信息卡片 -->
+            <div class="info-row">
+                <div class="info-card">
+                    <div class="label">📐 当前最大面积</div>
+                    <div class="value max" id="maxAreaVal">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">📏 当前计算面积</div>
+                    <div class="value cur" id="curAreaVal">—</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">📍 当前处理</div>
+                    <div class="value" id="curIdxVal" style="font-size:1.2rem;">—</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">📚 栈大小</div>
+                    <div class="value" id="stackSizeVal" style="color:var(--orange);">0</div>
+                </div>
+            </div>
+
+            <!-- 柱状图 -->
+            <div class="panel">
+                <h3><span class="dot" style="background:var(--accent)"></span> 柱状图</h3>
+                <div class="chart-container" id="chartContainer">
+                    <svg class="chart-svg" id="chartSvg" viewBox="0 0 1000 260"></svg>
+                </div>
+                <div class="legend">
+                    <span><span class="swatch" style="background:var(--accent)"></span> 当前遍历</span>
+                    <span><span class="swatch" style="background:var(--purple)"></span> 弹出计算中</span>
+                    <span><span class="swatch" style="background:var(--yellow)"></span> 在栈中</span>
+                    <span><span class="swatch" style="background:var(--green)"></span> 历史最大矩形</span>
+                    <span><span class="swatch" style="background:var(--red);opacity:.5"></span> 哨兵</span>
+                </div>
+            </div>
+
+            <!-- 栈 -->
+            <div class="panel">
+                <h3><span class="dot" style="background:var(--orange)"></span> 单调递增栈（存下标，对应高度递增）</h3>
+                <div class="stack-wrapper">
+                    <span class="stack-top-label">▲ 栈顶</span>
+                    <div class="stack-visual" id="stackDisplay">
+                        <span class="stack-empty">栈为空</span>
+                    </div>
+                    <span class="stack-bottom-label">▼ 栈底</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧日志 -->
+        <div class="log-panel panel">
+            <h3><span class="dot" style="background:var(--teal)"></span> 执行日志</h3>
+            <div class="log-area" id="logArea">
+                <div class="log-line"><span class="time">--</span> 等待开始...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============ 状态 ============
+let state = {
+    heights: [],
+    n: 0,
+    stack: [],
+    idx: 0,           // 当前遍历到 heights 的索引（含哨兵 n）
+    maxArea: 0,
+    maxRect: null,    // { left, right, height }
+    curArea: null,
+    curRect: null,
+    phase: 'init',    // 'init' | 'running' | 'done'
+    popping: false,
+    popQueue: [],     // 待弹出的索引队列
+    stepCount: 0,
+    totalSteps: 0,
+    autoInterval: null,
+    speed: 1000,
+    logs: []
+};
+
+function parseNums(str) {
+    return str.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+}
+
+function log(msg, cls = 'info') {
+    const now = new Date().toLocaleTimeString();
+    state.logs.push({ time: now, msg, cls });
+    renderLogs();
+}
+
+function renderLogs() {
+    const area = document.getElementById('logArea');
+    const recent = state.logs.slice(-40);
+    area.innerHTML = recent.map(l =>
+        `<div class="log-line ${l.cls}"><span class="time">${l.time}</span>${l.msg}</div>`
+    ).join('');
+    area.scrollTop = area.scrollHeight;
+}
+
+// ============ 渲染 ============
+function renderAll(animHints = {}) {
+    renderChart(animHints);
+    renderStack(animHints);
+    renderInfoCards();
+    updateProgress();
+}
+
+function renderChart(animHints = {}) {
+    const svg = document.getElementById('chartSvg');
+    const w = 1000, h = 260;
+    const padding = { top: 16, right: 40, bottom: 32, left: 10 };
+    const chartW = w - padding.left - padding.right;
+    const chartH = h - padding.top - padding.bottom;
+
+    if (!state.heights.length) {
+        svg.innerHTML = `<text x="500" y="140" text-anchor="middle" fill="#94a3b8" font-size="14">等待输入...</text>`;
+        return;
+    }
+
+    const maxH = Math.max(...state.heights, 1);
+    const totalBars = state.n + 1; // +1 for sentinel
+    const barGap = 4;
+    const barW = Math.min(60, (chartW - barGap * (totalBars + 1)) / totalBars);
+    const totalW = totalBars * barW + (totalBars + 1) * barGap;
+    const startX = padding.left + (chartW - totalW) / 2;
+
+    let html = '';
+
+    // 网格线
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH * i / 4);
+        html += `<line x1="${padding.left}" y1="${y}" x2="${w - padding.right}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/>`;
+        html += `<text x="${padding.left - 4}" y="${y + 4}" text-anchor="end" fill="#94a3b8" font-size="10">${Math.round(maxH * (1 - i/4))}</text>`;
+    }
+
+    // 绘制柱子
+    for (let i = 0; i < totalBars; i++) {
+        const x = startX + i * (barW + barGap) + barGap;
+        const val = i < state.n ? state.heights[i] : 0;
+        const barH = (val / maxH) * chartH;
+        const y = padding.top + chartH - barH;
+
+        let fill = '#cbd5e1';
+        let stroke = '#94a3b8';
+        let label = i < state.n ? `${val}` : '0';
+        let isSentinel = i === state.n;
+
+        // 上色逻辑
+        if (state.maxRect && i >= state.maxRect.left && i < state.maxRect.right) {
+            fill = 'rgba(34,197,94,.25)';
+            stroke = '#22c55e';
+        }
+        if (state.curRect && i >= state.curRect.left && i < state.curRect.right) {
+            fill = 'rgba(139,92,246,.2)';
+            stroke = '#8b5cf6';
+        }
+        if (state.stack.includes(i)) {
+            fill = 'rgba(245,158,11,.15)';
+            stroke = '#f59e0b';
+        }
+        if (!state.found && state.phase === 'running' && state.idx === i && i < state.n) {
+            fill = 'rgba(59,130,246,.2)';
+            stroke = '#3b82f6';
+        }
+        if (isSentinel) {
+            fill = 'rgba(239,68,68,.12)';
+            stroke = 'rgba(239,68,68,.4)';
+            strokeDasharray = '4,3';
+        }
+
+        const rx = Math.min(6, barW / 3);
+        const isSentinelStroke = isSentinel ? ' stroke-dasharray="4,3"' : '';
+
+        html += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(barH, 1)}" rx="${rx}" fill="${fill}" stroke="${stroke}" stroke-width="${isSentinel ? 1.5 : 2}"${isSentinelStroke}/>`;
+
+        // 标签
+        const labelY = y - 6;
+        if (labelY > 14 || isSentinel) {
+            html += `<text x="${x + barW/2}" y="${Math.max(labelY, 14)}" text-anchor="middle" fill="${isSentinel ? '#ef4444' : '#475569'}" font-size="${isSentinel ? 11 : 12}" font-weight="600">${label}</text>`;
+        } else {
+            html += `<text x="${x + barW/2}" y="${y + barH/2 + 4}" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">${label}</text>`;
+        }
+
+        // 底部索引
+        html += `<text x="${x + barW/2}" y="${h - 6}" text-anchor="middle" fill="#94a3b8" font-size="10">${i < state.n ? i : '哨兵'}</text>`;
+    }
+
+    // 当前矩形高亮框
+    if (state.curRect) {
+        const rx = startX + state.curRect.left * (barW + barGap) + barGap;
+        const rw = state.curRect.right > state.curRect.left
+            ? (state.curRect.right - state.curRect.left) * (barW + barGap) - barGap
+            : barW;
+        const rh = (state.curRect.height / maxH) * chartH;
+        const ry = padding.top + chartH - rh;
+        html += `<rect x="${rx}" y="${ry}" width="${Math.max(rw, 0)}" height="${Math.max(rh, 0)}" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="8,4" rx="4">
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite"/>
+        </rect>`;
+    }
+
+    // 最大矩形框
+    if (state.maxRect && state.maxRect.right > state.maxRect.left) {
+        const mx = startX + state.maxRect.left * (barW + barGap) + barGap;
+        const mw = (state.maxRect.right - state.maxRect.left) * (barW + barGap) - barGap;
+        const mh = (state.maxRect.height / maxH) * chartH;
+        const my = padding.top + chartH - mh;
+        html += `<rect x="${mx}" y="${my}" width="${Math.max(mw, 0)}" height="${Math.max(mh, 0)}" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="2.5" rx="4"/>`;
+        html += `<text x="${mx + mw/2}" y="${my - 6}" text-anchor="middle" fill="#16a34a" font-size="11" font-weight="700">${state.maxArea}</text>`;
+    }
+
+    svg.innerHTML = html;
+}
+
+function renderStack(animHints = {}) {
+    const container = document.getElementById('stackDisplay');
+    if (!state.stack.length) {
+        container.classList.remove('has-items');
+        container.innerHTML = '<span class="stack-empty">栈为空</span>';
+        return;
+    }
+    container.classList.add('has-items');
+    container.innerHTML = state.stack.map((idx, i) => {
+        let cls = 'stack-item';
+        if (animHints.newPush && i === state.stack.length - 1) cls += ' new';
+        const h = idx < state.n ? state.heights[idx] : 0;
+        return `<div class="${cls}"><span style="color:#94a3b8;font-size:.7rem;">[${idx}]</span> ${h}</div>`;
+    }).join('');
+}
+
+function renderInfoCards() {
+    document.getElementById('maxAreaVal').textContent = state.maxArea;
+    if (state.curArea !== null) {
+        document.getElementById('curAreaVal').textContent = state.curArea;
+        document.getElementById('curAreaVal').style.color = 'var(--purple)';
+    } else {
+        document.getElementById('curAreaVal').textContent = '—';
+        document.getElementById('curAreaVal').style.color = 'var(--muted)';
+    }
+    if (state.phase === 'running') {
+        document.getElementById('curIdxVal').textContent = state.idx < state.n ? `[${state.idx}] = ${state.heights[state.idx]}` : '哨兵 0';
+    } else {
+        document.getElementById('curIdxVal').textContent = '—';
+    }
+    document.getElementById('stackSizeVal').textContent = state.stack.length;
+}
+
+function updateProgress() {
+    const total = state.totalSteps;
+    const cur = state.stepCount;
+    const pct = total > 0 ? Math.round(cur / total * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = `${cur}/${total}`;
+}
+
+// ============ 原理面板折叠 ============
+function togglePrinciple() {
+    document.getElementById('principlePanel').classList.toggle('collapsed');
+}
+
+// ============ 算法逻辑 ============
+function initAndRun() {
+    stopAuto();
+    const input = document.getElementById('inputHeights').value;
+    const heights = parseNums(input);
+
+    if (heights.length === 0) {
+        log('⚠ 请输入有效的高度数组', 'warn');
+        return;
+    }
+
+    state = {
+        heights,
+        n: heights.length,
+        stack: [],
+        idx: 0,
+        maxArea: 0,
+        maxRect: null,
+        curArea: null,
+        curRect: null,
+        phase: 'running',
+        popping: false,
+        popQueue: [],
+        stepCount: 0,
+        totalSteps: heights.length + 1 + heights.length, // approximate
+        autoInterval: null,
+        speed: state.speed || 1000,
+        logs: []
+    };
+
+    log(`📥 输入高度: [${heights.join(', ')}]`, 'info');
+    log(`🔢 n = ${state.n}，算法开始...`, 'info');
+    log(`📌 单调递增栈：遇到更矮的柱子时弹出并计算面积`, 'highlight');
+
+    renderAll();
+}
+
+function step() {
+    if (state.phase === 'init') return;
+    if (state.phase === 'done') {
+        log('⏹ 算法已结束', 'info');
+        return;
+    }
+
+    state.stepCount++;
+
+    // 如果正在弹出过程中
+    if (state.popping) {
+        stepPop();
+        return;
+    }
+
+    // 正常遍历
+    if (state.idx > state.n) {
+        // 全部完成
+        state.phase = 'done';
+        state.curArea = null;
+        state.curRect = null;
+        log(`🏁 算法结束！最大矩形面积 = ${state.maxArea}`, 'success');
+        renderAll();
+        return;
+    }
+
+    const i = state.idx;
+    const h = i < state.n ? state.heights[i] : 0;
+    const label = i < state.n ? `heights[${i}] = ${h}` : `哨兵 = 0`;
+
+    log(`🔍 处理 ${label}`, 'info');
+
+    // 检查是否需要弹出
+    if (state.stack.length > 0) {
+        const topIdx = state.stack[state.stack.length - 1];
+        const topH = topIdx < state.n ? state.heights[topIdx] : 0;
+
+        if (topH > h) {
+            // 需要弹出
+            log(`  ⚠ 栈顶高度 ${topH} > 当前高度 ${h}，触发弹出！`, 'warn');
+            state.popping = true;
+            state.popQueue = [...state.stack]; // 收集所有需要弹出的
+            stepPop();
+            // 不推进 idx，先完成弹出
+            return;
+        } else {
+            log(`  ✓ 栈顶高度 ${topH} ≤ ${h}，维持单调性`, 'info');
+        }
+    }
+
+    // 压栈
+    state.stack.push(i);
+    log(`  📌 push [${i}] (高度=${h}) 入栈`, 'info');
+    state.idx++;
+    state.curArea = null;
+    state.curRect = null;
+    renderAll({ newPush: true });
+}
+
+function stepPop() {
+    if (!state.popping || state.stack.length === 0) {
+        state.popping = false;
+        state.popQueue = [];
+        // 弹出完成后推进
+        const i = state.idx;
+        const h = i < state.n ? state.heights[i] : 0;
+        state.stack.push(i);
+        log(`  📌 push [${i}] (高度=${h}) 入栈`, 'info');
+        state.idx++;
+        state.curArea = null;
+        state.curRect = null;
+        renderAll({ newPush: true });
+        return;
+    }
+
+    const topIdx = state.stack[state.stack.length - 1];
+    const topH = topIdx < state.n ? state.heights[topIdx] : 0;
+    const curH = state.idx < state.n ? state.heights[state.idx] : 0;
+
+    if (topH <= curH) {
+        // 停止弹出
+        state.popping = false;
+        state.popQueue = [];
+        state.curArea = null;
+        state.curRect = null;
+        renderAll();
+        return;
+    }
+
+    // 弹出
+    const popped = state.stack.pop();
+    const height = popped < state.n ? state.heights[popped] : 0;
+
+    // 计算宽度
+    let width;
+    if (state.stack.length === 0) {
+        width = state.idx;
+    } else {
+        width = state.idx - state.stack[state.stack.length - 1] - 1;
+    }
+
+    const area = height * width;
+    state.curArea = area;
+    state.curRect = {
+        left: state.stack.length === 0 ? 0 : state.stack[state.stack.length - 1] + 1,
+        right: state.idx,
+        height: height
+    };
+
+    log(`  🔴 pop [${popped}] 高度=${height}，宽=${width}，面积=${height}×${width}=${area}`, 'highlight');
+
+    if (area > state.maxArea) {
+        state.maxArea = area;
+        state.maxRect = { ...state.curRect };
+        log(`  🏆 新最大面积！${area}`, 'success');
+    }
+
+    renderAll();
+}
+
+function toggleAuto() {
+    const btn = document.getElementById('btnAuto');
+    if (state.autoInterval) {
+        stopAuto();
+        btn.textContent = '▶ 自动';
+        return;
+    }
+    if (state.phase === 'done') {
+        log('⏹ 算法已结束，请先重置', 'info');
+        return;
+    }
+    if (state.phase === 'init') {
+        initAndRun();
+    }
+    btn.textContent = '⏸ 暂停';
+    state.autoInterval = setInterval(() => {
+        if (state.phase === 'done') {
+            stopAuto();
+            btn.textContent = '▶ 自动';
+            return;
+        }
+        step();
+    }, state.speed);
+}
+
+function stopAuto() {
+    if (state.autoInterval) {
+        clearInterval(state.autoInterval);
+        state.autoInterval = null;
+    }
+    document.getElementById('btnAuto').textContent = '▶ 自动';
+}
+
+function changeSpeed() {
+    const speeds = [2000, 1000, 500, 250, 120];
+    const labels = ['0.5x', '1x', '2x', '4x', '8x'];
+    const current = speeds.indexOf(state.speed);
+    const next = (current + 1) % speeds.length;
+    state.speed = speeds[next];
+    document.getElementById('btnSpeed').textContent = '⏱ ' + labels[next];
+
+    if (state.autoInterval) {
+        stopAuto();
+        toggleAuto();
+    }
+}
+
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        step();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        stopAuto();
+        initAndRun();
+    } else if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        toggleAuto();
+    }
+});
+
+// 初始渲染
+initAndRun();
+</script>
+</body>
+</html>

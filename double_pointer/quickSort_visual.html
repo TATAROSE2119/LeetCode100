@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快速排序 - 算法可视化</title>
+<style>
+    :root {
+        --bg: #f8fafc; --card: #fff; --border: #e2e8f0; --text: #1e293b; --muted: #94a3b8;
+        --accent: #3b82f6; --accent-light: #eff6ff; --green: #22c55e; --green-light: #f0fdf4;
+        --red: #ef4444; --red-light: #fef2f2; --yellow: #f59e0b; --yellow-light: #fffbeb;
+        --purple: #8b5cf6; --purple-light: #f5f3ff; --orange: #f97316; --orange-light: #fff7ed;
+        --pink: #ec4899; --teal: #14b8a6; --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+        --shadow-md: 0 4px 6px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.04); --radius: 14px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:24px; }
+    .container { max-width:1500px; margin:0 auto; }
+    h1 { text-align:center; font-size:1.65rem; font-weight:800; margin-bottom:4px; letter-spacing:-.5px; }
+    .subtitle { text-align:center; color:var(--muted); font-size:.85rem; margin-bottom:20px; }
+    .subtitle span { background:var(--purple-light); color:var(--purple); padding:2px 8px; border-radius:4px; font-weight:600; font-size:.78rem; }
+
+    .controls { display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:14px; padding:14px 20px; background:var(--card); border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); }
+    .controls label { color:var(--muted); font-size:.8rem; font-weight:600; }
+    .controls input { width:320px; padding:9px 14px; border-radius:10px; border:1.5px solid var(--border); background:var(--bg); color:var(--text); font-size:.9rem; font-family:'SF Mono','Fira Code',monospace; }
+    .controls input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+    button { padding:9px 16px; border-radius:10px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+    button:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); }
+    button:active { transform:translateY(0); }
+    .btn-run { background:var(--accent); color:#fff; }
+    .btn-step { background:var(--purple); color:#fff; }
+    .btn-auto { background:var(--green); color:#fff; }
+    .btn-speed { background:#fff; color:var(--orange); border:1.5px solid var(--orange); }
+
+    .progress-wrap { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .progress-bar { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--purple)); border-radius:3px; transition:width .3s; width:0%; }
+    .progress-text { font-size:.76rem; color:var(--muted); font-weight:600; min-width:60px; text-align:right; }
+
+    .main-layout { display:flex; gap:16px; align-items:flex-start; }
+    .principle-column { width:280px; flex-shrink:0; position:sticky; top:16px; align-self:stretch; }
+    .center-column { flex:1; min-width:0; }
+    .log-panel { width:320px; flex-shrink:0; position:sticky; top:16px; align-self:stretch; }
+    .log-panel .log-area { max-height:calc(100vh - 120px); min-height:400px; }
+
+    .panel { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:14px; box-shadow:var(--shadow); }
+    .panel h3 { font-size:.88rem; color:var(--muted); margin-bottom:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
+    .panel h3 .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+    .principle-panel { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    .principle-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; cursor:pointer; user-select:none; transition:background .15s; }
+    .principle-header:hover { background:var(--bg); }
+    .principle-header h3 { font-size:.88rem; color:var(--text); font-weight:700; display:flex; align-items:center; gap:8px; margin:0; }
+    .principle-toggle { font-size:1.1rem; color:var(--muted); transition:transform .25s; }
+    .principle-panel.collapsed .principle-toggle { transform:rotate(-90deg); }
+    .principle-body { padding:0 20px 18px; transition:all .3s; }
+    .principle-panel.collapsed .principle-body { display:none; }
+    .principle-body h4 { font-size:.78rem; color:var(--accent); margin:10px 0 6px; font-weight:700; }
+    .principle-body p,.principle-body li { font-size:.76rem; color:#475569; line-height:1.65; }
+    .principle-body ol { padding-left:18px; }
+    .principle-body ol li { margin-bottom:3px; }
+    .principle-body ol li::marker { color:var(--accent); font-weight:700; font-size:.72rem; }
+    .badge { padding:3px 10px; border-radius:20px; font-size:.68rem; font-weight:700; }
+    .badge.time { background:var(--accent-light); color:var(--accent); }
+    .badge.avg { background:var(--green-light); color:var(--green); }
+    .badge.worst { background:var(--red-light); color:var(--red); }
+    .principle-note { margin-top:10px; padding:10px 14px; background:var(--yellow-light); border-radius:8px; border-left:3px solid var(--yellow); font-size:.74rem; color:#92400e; line-height:1.6; }
+
+    /* 数组可视化 */
+    .array-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; align-items:flex-end; min-height:72px; padding:6px 0; }
+    .cell { width:60px; height:60px; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:700; font-size:1.1rem; transition:all .3s cubic-bezier(.4,0,.2,1); position:relative; background:var(--bg); border:2px solid var(--border); color:var(--text); }
+    .cell .idx { font-size:.58rem; color:var(--muted); font-weight:500; }
+    .cell.pivot { border-color:var(--red); background:var(--red-light); box-shadow:0 0 12px rgba(239,68,68,.2); }
+    .cell.i-ptr { border-color:var(--accent); background:var(--accent-light); transform:translateY(-6px); }
+    .cell.j-ptr { border-color:var(--green); background:var(--green-light); }
+    .cell.swapped { animation:swapBounce .45s ease; }
+    .cell.sorted { border-color:var(--purple); background:var(--purple-light); }
+    .cell.in-range { border-color:#cbd5e1; }
+    .cell.out-range { opacity:.35; }
+
+    @keyframes swapBounce { 0%{transform:scale(1)} 30%{transform:scale(1.18)} 60%{transform:scale(.92)} 100%{transform:scale(1)} }
+
+    .pointer-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; min-height:26px; }
+    .pointer-slot { width:60px; display:flex; justify-content:center; align-items:center; gap:2px; }
+    .pointer-tag { font-size:.65rem; font-weight:700; padding:1px 7px; border-radius:8px; white-space:nowrap; }
+    .boundary-row { min-height:42px; margin-bottom:2px; }
+    .boundary-row .pointer-slot { flex-direction:column; gap:2px; }
+    .i-row { margin-bottom:4px; }
+    .j-row { margin-top:4px; }
+    .pointer-tag.pivot-tag { background:var(--red-light); color:var(--red); }
+    .pointer-tag.i-tag { background:var(--accent-light); color:var(--accent); }
+    .pointer-tag.j-tag { background:var(--green-light); color:var(--green); }
+    .pointer-tag.l-tag { background:var(--orange-light); color:var(--orange); font-family:'SF Mono','Fira Code',monospace; font-size:.54rem; padding:2px 4px; }
+    .pointer-tag.r-tag { background:#fdf2f8; color:var(--pink); font-family:'SF Mono','Fira Code',monospace; font-size:.54rem; padding:2px 4px; }
+
+    .info-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+    .info-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; box-shadow:var(--shadow); }
+    .info-card .label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; font-weight:600; margin-bottom:3px; }
+    .info-card .value { font-size:1.15rem; font-weight:800; }
+    .info-card .value.accent { color:var(--accent); }
+    .info-card .value.green { color:var(--green); }
+    .info-card .value.red { color:var(--red); }
+
+    .call-stack { display:flex; flex-direction:column-reverse; gap:4px; }
+    .call-item { padding:6px 12px; border-radius:8px; font-size:.76rem; background:var(--purple-light); border:1px solid var(--purple); color:var(--purple); font-weight:600; }
+    .call-item.active { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+
+    .log-area { background:var(--bg); border-radius:10px; border:1px solid var(--border); padding:12px 16px; overflow-y:auto; font-family:'SF Mono','Fira Code',monospace; font-size:.76rem; line-height:1.7; }
+    .log-line { padding:2px 0; border-bottom:1px solid rgba(148,163,184,.08); }
+    .log-line .time { color:var(--muted); margin-right:8px; font-size:.7rem; }
+    .log-line.success { color:var(--green); }
+    .log-line.info { color:var(--accent); }
+    .log-line.warn { color:var(--orange); }
+    .log-line.highlight { color:var(--purple); font-weight:600; }
+
+    .legend { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:8px; font-size:.72rem; color:var(--muted); }
+    .legend span { display:flex; align-items:center; gap:4px; }
+    .legend .swatch { width:12px; height:12px; border-radius:3px; display:inline-block; }
+
+    @media (max-width:1200px) { .principle-column{width:240px} .log-panel{width:280px} }
+    @media (max-width:900px) { .main-layout{flex-direction:column} .principle-column{width:100%;position:static} .log-panel{width:100%;position:static} .log-panel .log-area{max-height:180px;min-height:100px} }
+    @media (max-width:640px) { body{padding:12px} .controls input{width:200px} .cell{width:46px;height:46px;font-size:.85rem} .pointer-slot{width:46px} .pointer-tag.l-tag,.pointer-tag.r-tag{font-size:.48rem;padding:2px} }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>⚡ 快速排序（QuickSort）</h1>
+<p class="subtitle">Lomuto 分区方案 · <span>分治 + 双指针</span></p>
+
+<div class="controls">
+    <label>输入数组：</label>
+    <input type="text" id="inputNums" value="5, 3, 8, 4, 2, 7, 1, 6" placeholder="例如: 5, 3, 8, 4, 2, 7, 1, 6">
+    <button class="btn-run" onclick="initAndRun()">🔄 重置</button>
+    <button class="btn-step" id="btnStep" onclick="step()">⏭ 单步</button>
+    <button class="btn-auto" id="btnAuto" onclick="toggleAuto()">▶ 自动</button>
+    <button class="btn-speed" onclick="changeSpeed()" id="btnSpeed">⏱ 1x</button>
+</div>
+
+<div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-text" id="progressText">0/0</span>
+</div>
+
+<div class="main-layout">
+    <div class="principle-column">
+        <div class="principle-panel" id="principlePanel">
+            <div class="principle-header" onclick="togglePrinciple()">
+                <h3><span class="dot" style="background:var(--purple)"></span> 算法原理详解</h3>
+                <span class="principle-toggle">▼</span>
+            </div>
+            <div class="principle-body">
+                <h4>💡 核心思想</h4>
+                <p>1. 选<strong>基准值（pivot）</strong>：取区间最右元素</p>
+                <p>2. <strong>分区（partition）</strong>：将 ≤pivot 的元素移到左边，>pivot 的留在右边</p>
+                <p>3. <strong>递归</strong>：对左右子区间分别排序</p>
+                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                    <span class="badge time">⏱ 平均 O(n log n)</span>
+                    <span class="badge worst">⚠ 最坏 O(n²)</span>
+                    <span class="badge avg">📦 平均栈空间 O(log n)</span>
+                </div>
+                <h4>📋 分区步骤（Lomuto）</h4>
+                <ol>
+                    <li>pivot = arr[r_pointer]，l_pointer 和 r_pointer 标记当前递归区间</li>
+                    <li>i 指向下一个「≤pivot 元素」应该放入的位置</li>
+                    <li>j 从 l_pointer 扫描到 r_pointer−1：若 arr[j] ≤ pivot，则与 arr[i] 交换，再令 i++</li>
+                    <li>扫描完将 pivot 放到 i 位置</li>
+                    <li>返回 i 作为分割点</li>
+                </ol>
+                <div class="principle-note"><strong>🔑 循环不变量：</strong>扫描 j 之前，[l_pointer, i−1] 中的元素都 ≤ pivot，[i, j−1] 中的元素都 > pivot，[j, r_pointer−1] 还未分类，r_pointer 位置保存 pivot。扫描结束后把 pivot 与 arr[i] 交换，i 才成为 pivot 的最终位置。</div>
+                <div class="principle-note"><strong>⚠ 复杂度说明：</strong>这里固定选最右元素。数组已有序、逆序或含大量相等元素时，可能退化到 O(n²)，递归栈也可能达到 O(n)；该实现不是稳定排序。</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="center-column">
+        <div class="info-row">
+            <div class="info-card"><div class="label">🟠 左边界 l_pointer</div><div class="value" id="lVal" style="color:var(--orange);">—</div></div>
+            <div class="info-card"><div class="label">🩷 右边界 r_pointer</div><div class="value" id="rVal" style="color:var(--pink);">—</div></div>
+            <div class="info-card"><div class="label">🔴 基准值 Pivot</div><div class="value red" id="pivotVal">—</div></div>
+            <div class="info-card"><div class="label">🔵 下一个放置位置 i</div><div class="value accent" id="iVal">—</div></div>
+            <div class="info-card"><div class="label">🟢 扫描指针 j</div><div class="value green" id="jVal">—</div></div>
+            <div class="info-card"><div class="label">📚 递归栈深度</div><div class="value" id="depthVal" style="color:var(--purple);">0</div></div>
+        </div>
+
+        <div class="panel">
+            <h3><span class="dot" style="background:var(--accent)"></span> 数组状态</h3>
+            <div class="pointer-row boundary-row" id="boundaryPointerRow"></div>
+            <div class="pointer-row i-row" id="iPointerRow"></div>
+            <div class="array-row" id="arrayDisplay"></div>
+            <div class="pointer-row j-row" id="jPointerRow"></div>
+            <div class="legend">
+                <span><span class="swatch" style="background:var(--red)"></span> Pivot</span>
+                <span><span class="swatch" style="background:var(--accent)"></span> 下一个放置位置 i</span>
+                <span><span class="swatch" style="background:var(--green)"></span> 扫描指针 j</span>
+                <span><span class="swatch" style="background:var(--orange)"></span> l_pointer</span>
+                <span><span class="swatch" style="background:var(--pink)"></span> r_pointer</span>
+                <span><span class="swatch" style="background:var(--purple)"></span> 已排序</span>
+                <span><span class="swatch" style="background:#e2e8f0;opacity:.35"></span> 不在当前区间</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3><span class="dot" style="background:var(--purple)"></span> 递归调用栈</h3>
+            <div class="call-stack" id="callStack"><span style="color:var(--muted);font-size:.8rem;">等待开始...</span></div>
+        </div>
+    </div>
+
+    <div class="log-panel panel">
+        <h3><span class="dot" style="background:var(--teal)"></span> 执行日志</h3>
+        <div class="log-area" id="logArea"><div class="log-line"><span class="time">--</span> 等待开始...</div></div>
+    </div>
+</div>
+</div>
+
+<script>
+let state = {
+    nums: [], n:0,
+    sorted:new Set(),   // indices that are in their final positions
+    phase:'init',
+    stepCount:0, totalSteps:0,
+    autoInterval:null, speed:1000,
+    logs:[], lastSwap:null, lastAction:''
+};
+
+let _allSteps = [];     // pre-computed all steps
+let _stepIdx = 0;
+
+function parseNums(s){
+    const tokens = s.trim().split(/[\s,，]+/).filter(Boolean);
+    if(!tokens.length) return {nums:[], error:'请输入至少一个整数'};
+    if(tokens.some(token=>!/^[-+]?\d+$/.test(token))) {
+        return {nums:[], error:'输入中包含非整数；请用逗号、中文逗号或空格分隔'};
+    }
+    const nums = tokens.map(Number);
+    if(nums.some(num=>!Number.isSafeInteger(num))) {
+        return {nums:[], error:'请输入 JavaScript 安全整数范围内的数值'};
+    }
+    if(nums.length > 30) {
+        return {nums:[], error:'为保证动画清晰流畅，最多输入 30 个整数'};
+    }
+    return {nums, error:''};
+}
+function log(m,c='info'){ const t=new Date().toLocaleTimeString(); state.logs.push({time:t,msg:m,cls:c}); renderLogs(); }
+function renderLogs(){
+    const a=document.getElementById('logArea');
+    a.innerHTML=state.logs.slice(-40).map(l=>`<div class="log-line ${l.cls}"><span class="time">${l.time}</span>${l.msg}</div>`).join('');
+    a.scrollTop=a.scrollHeight;
+}
+
+// Pre-compute all steps by simulating the algorithm
+function computeAllSteps(nums){
+    const steps = [];
+    const arr = [...nums];
+    const n = arr.length;
+    const sorted = new Set();
+    const callStack = [];
+
+    function addStep(type, l, r, i, j, pivot, highlights, action){
+        steps.push({
+            type, l, r, i, j, pivot,
+            arr:[...arr],
+            sorted:new Set(sorted),
+            callStack:callStack.map(call=>({...call})),
+            highlights:highlights||{},
+            action:action||''
+        });
+    }
+
+    function quickSortRec(l, r){
+        callStack.push({l, r});
+
+        if(l >= r){
+            if(l === r) {
+                sorted.add(l);
+                addStep('base', l, r, -1, -1, -1, {}, `区间 [${l}, ${r}] 只有一个元素，直接返回`);
+            } else {
+                addStep('base', l, r, -1, -1, -1, {}, `区间 [${l}, ${r}] 为空，直接返回`);
+            }
+            callStack.pop();
+            return;
+        }
+
+        // entering partition
+        const pivot = arr[r];
+        addStep('enter', l, r, l, l, pivot, {pivot:r, i:l, j:l}, `进入区间 [${l}, ${r}]：选择最右元素 arr[${r}] = ${pivot} 作为 pivot`);
+
+        let i = l;
+        for(let j = l; j < r; j++){
+            addStep('compare', l, r, i, j, pivot, {pivot:r, i, j}, `比较 arr[${j}]=${arr[j]} 与 pivot=${pivot}`);
+            if(arr[j] <= pivot){
+                const acceptedValue = arr[j];
+                const oldI = i;
+                if(i !== j){
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                    i++;
+                    addStep('swap', l, r, i, j, pivot, {pivot:r, i, j, swapA:oldI, swapB:j}, `${acceptedValue} ≤ ${pivot}：交换 arr[${oldI}] 与 arr[${j}]，i 从 ${oldI} 移到 ${i}`);
+                } else {
+                    i++;
+                    addStep('accept', l, r, i, j, pivot, {pivot:r, i, j}, `${acceptedValue} ≤ ${pivot}：它已在左侧区域，无需交换，i 从 ${oldI} 移到 ${i}`);
+                }
+            } else {
+                addStep('skip', l, r, i, j, pivot, {pivot:r, i, j}, `${arr[j]} > ${pivot}：归入已扫描的“> pivot”区域 [${i}, ${j}]，i 保持在 ${i}`);
+            }
+        }
+
+        // place pivot
+        if(i !== r){
+            [arr[i], arr[r]] = [arr[r], arr[i]];
+            sorted.add(i);
+            addStep('place', l, r, i, -1, pivot, {pivot:i, swapA:i, swapB:r}, `扫描结束：交换 arr[${i}] 与 arr[${r}]，pivot=${pivot} 归位到索引 ${i}`);
+        } else {
+            sorted.add(i);
+            addStep('place', l, r, i, -1, pivot, {pivot:i}, `扫描结束：pivot=${pivot} 已在索引 ${i}，无需交换`);
+        }
+
+        const pi = i;
+        addStep('recurse', l, r, pi, -1, pivot, {pivot:pi}, `索引 ${pi} 已确定；先递归左区间 [${l}, ${pi-1}]，再递归右区间 [${pi+1}, ${r}]`);
+
+        quickSortRec(l, pi-1);
+        addStep('resume', l, r, -1, -1, pivot, {}, `左区间 [${l}, ${pi-1}] 已返回，继续处理右区间 [${pi+1}, ${r}]`);
+        quickSortRec(pi+1, r);
+        addStep('return', l, r, -1, -1, pivot, {}, `区间 [${l}, ${r}] 排序完成，返回上一层`);
+        callStack.pop();
+    }
+
+    addStep('start', 0, n-1, -1, -1, -1, {}, `开始快速排序：[${arr.join(', ')}]`);
+    quickSortRec(0, n-1);
+    addStep('done', -1, -1, -1, -1, -1, {}, `排序完成：[${arr.join(', ')}]`);
+    return steps;
+}
+
+function initAndRun(){
+    stopAuto();
+    const parsed = parseNums(document.getElementById('inputNums').value);
+    if(parsed.error){ log(`⚠ ${parsed.error}`,'warn'); return; }
+    const nums = parsed.nums;
+    const speed = state.speed || 1000;
+    _allSteps = computeAllSteps(nums);
+    _stepIdx = -1;
+    state = {
+        nums:[...nums], n:nums.length,
+        sorted:new Set(),
+        phase:'running', stepCount:0, totalSteps:_allSteps.length,
+        autoInterval:null, speed,
+        logs:[], lastSwap:null, lastAction:'',
+        _curStep:null, _callStackVis:[]
+    };
+    log(`📥 输入：[${nums.join(', ')}]`,'info');
+    log(`📊 共 ${_allSteps.length} 步`,'info');
+    step();
+}
+
+function step(){
+    if(_stepIdx + 1 >= _allSteps.length) {
+        if(state.phase!=='done'){ state.phase='done'; renderAll(); log('🏁 排序完成！','success'); }
+        return;
+    }
+    _stepIdx++;
+    state.stepCount = _stepIdx + 1;
+    const s = _allSteps[_stepIdx];
+    state.nums = s.arr;
+    state.sorted = s.sorted;
+    state.lastSwap = s.highlights.swapA !== undefined ? [s.highlights.swapA, s.highlights.swapB] : null;
+    state.lastAction = s.action;
+    state._curStep = s;
+    state._callStackVis = s.callStack;
+
+    if(s.type === 'done'){
+        state.phase = 'done';
+        stopAuto();
+    }
+
+    if(s.action) {
+        const logClass = s.type==='done' ? 'success'
+            : s.type==='swap'||s.type==='accept'||s.type==='place'||s.type==='return' ? 'highlight'
+            : s.type==='skip' ? 'warn' : 'info';
+        log(s.action, logClass);
+    }
+    renderAll();
+}
+
+function renderCallStack(){
+    const c = document.getElementById('callStack');
+    const stack = state._callStackVis || [];
+    document.getElementById('depthVal').textContent = stack.length;
+    if(!stack.length){
+        const message = state.phase==='done' ? '所有递归调用均已返回' : '尚未进入递归调用';
+        c.innerHTML = `<span style="color:var(--muted);font-size:.8rem;">${message}</span>`;
+        return;
+    }
+    c.innerHTML = stack.map((cs,i)=>{
+        const active = i===stack.length-1;
+        return `<div class="call-item${active?' active':''}">📞 quickSort([${cs.l}, ${cs.r}])</div>`;
+    }).join('');
+}
+
+function renderAll(){
+    renderArray();
+    renderPointers();
+    renderInfoCards();
+    renderCallStack();
+    updateProgress();
+}
+
+function renderArray(){
+    const c = document.getElementById('arrayDisplay');
+    if(!state.nums.length){ c.innerHTML='<span style="color:var(--muted)">等待输入...</span>'; return; }
+    const s = state._curStep || {};
+    const hl = s.highlights || {};
+    c.innerHTML = state.nums.map((v,idx)=>{
+        let cls = 'cell';
+        if(state.sorted.has(idx)) cls += ' sorted';
+        if(s.type !== 'done' && s.type !== 'start' && s.l !== undefined){
+            if(idx < s.l || idx > s.r) cls += ' out-range';
+            else cls += ' in-range';
+        }
+        if(hl.pivot === idx) cls += ' pivot';
+        if(hl.i === idx) cls += ' i-ptr';
+        if(hl.j === idx && hl.j !== hl.i) cls += ' j-ptr';
+        if(state.lastSwap && (state.lastSwap[0]===idx || state.lastSwap[1]===idx)) cls += ' swapped';
+        return `<div class="${cls}"><span>${v}</span><span class="idx">[${idx}]</span></div>`;
+    }).join('');
+}
+
+function renderPointers(){
+    const boundaryRow = document.getElementById('boundaryPointerRow');
+    const iRow = document.getElementById('iPointerRow');
+    const jRow = document.getElementById('jPointerRow');
+    if(!state.nums.length){
+        boundaryRow.innerHTML='';
+        iRow.innerHTML='';
+        jRow.innerHTML='';
+        return;
+    }
+    const s = state._curStep || {};
+    const hl = s.highlights || {};
+
+    boundaryRow.innerHTML = state.nums.map((_,idx)=>{
+        let tags='';
+        if(s.l===idx) tags+='<span class="pointer-tag l-tag" title="当前区间左边界">l_pointer</span>';
+        if(s.r===idx) tags+='<span class="pointer-tag r-tag" title="当前区间右边界">r_pointer</span>';
+        return `<div class="pointer-slot">${tags}</div>`;
+    }).join('');
+
+    iRow.innerHTML = state.nums.map((_,idx)=>{
+        const tag = hl.i===idx ? '<span class="pointer-tag i-tag">i ↓</span>' : '';
+        return `<div class="pointer-slot">${tag}</div>`;
+    }).join('');
+
+    jRow.innerHTML = state.nums.map((_,idx)=>{
+        const tag = hl.j===idx ? '<span class="pointer-tag j-tag">j ↑</span>' : '';
+        return `<div class="pointer-slot">${tag}</div>`;
+    }).join('');
+}
+
+function renderInfoCards(){
+    const s = state._curStep || {};
+    const showBounds = s.type!=='done' && Number.isInteger(s.l) && Number.isInteger(s.r);
+    document.getElementById('lVal').textContent = showBounds?s.l:'—';
+    document.getElementById('rVal').textContent = showBounds?s.r:'—';
+    document.getElementById('pivotVal').textContent = s.pivot!==undefined&&s.pivot>=0?s.pivot:'—';
+    document.getElementById('iVal').textContent = s.i!==undefined&&s.i>=0?s.i:'—';
+    document.getElementById('jVal').textContent = s.j!==undefined&&s.j>=0&&s.type!=='base'?s.j:'—';
+}
+
+function updateProgress(){
+    const t=state.totalSteps, c=state.stepCount;
+    document.getElementById('progressFill').style.width=(t>0?Math.round(c/t*100):0)+'%';
+    document.getElementById('progressText').textContent=`${c}/${t}`;
+}
+
+function togglePrinciple(){ document.getElementById('principlePanel').classList.toggle('collapsed'); }
+
+function toggleAuto(){
+    const b=document.getElementById('btnAuto');
+    if(state.autoInterval){ stopAuto(); b.textContent='▶ 自动'; return; }
+    if(state.phase==='done'){ log('⏹ 已结束','info'); return; }
+    if(state.phase==='init') initAndRun();
+    b.textContent='⏸ 暂停';
+    state.autoInterval=setInterval(()=>{
+        if(_stepIdx+1>=_allSteps.length){ stopAuto(); b.textContent='▶ 自动'; return; }
+        step();
+    },state.speed);
+}
+function stopAuto(){
+    if(state.autoInterval){ clearInterval(state.autoInterval); state.autoInterval=null; }
+    document.getElementById('btnAuto').textContent='▶ 自动';
+}
+function changeSpeed(){
+    const speeds=[2000,1000,500,250,120], labels=['0.5x','1x','2x','4x','8x'];
+    const i=(speeds.indexOf(state.speed)+1)%speeds.length;
+    state.speed=speeds[i];
+    document.getElementById('btnSpeed').textContent='⏱ '+labels[i];
+    if(state.autoInterval){ stopAuto(); toggleAuto(); }
+}
+document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT') return;
+    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); step(); }
+    else if(e.key==='Enter'){ e.preventDefault(); stopAuto(); initAndRun(); }
+    else if(e.key==='a'||e.key==='A'){ e.preventDefault(); toggleAuto(); }
+});
+initAndRun();
+</script>
+</body>
+</html>

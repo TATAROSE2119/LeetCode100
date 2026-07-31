@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>132 模式 - 单调栈算法可视化</title>
+    <style>
+        :root {
+            --bg: #e2e8f0;
+            --card: #1e293b;
+            --border: #334155;
+            --text:  #0f172a;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --green: #4ade80;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+            --orange: #fb923c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        /* 控制面板 */
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .controls label {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .controls input {
+            width: 320px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .controls input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover { transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+
+        .btn-run {
+            background: var(--accent);
+            color: #0f172a;
+        }
+        .btn-step {
+            background: var(--purple);
+            color: #fff;
+        }
+        .btn-reset {
+            background: var(--border);
+            color: var(--text);
+        }
+        .btn-auto {
+            background: var(--green);
+            color: #0f172a;
+        }
+        .btn-speed {
+            background: var(--orange);
+            color: #0f172a;
+        }
+
+        /* 算法步骤标签 */
+        .step-indicator {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .step-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            transition: all 0.3s;
+        }
+        .step-tag.active {
+            background: var(--accent);
+            color: #0f172a;
+            border-color: var(--accent);
+            box-shadow: 0 0 16px rgba(56,189,248,.3);
+        }
+        .step-tag.done {
+            background: rgba(74,222,128,.15);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        /* 主面板 */
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .panel h3 {
+            font-size: 0.95rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel h3 .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 数组展示 */
+        .array-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .cell {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.4s cubic-bezier(.4,0,.2,1);
+            position: relative;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+        .cell .idx {
+            font-size: 0.65rem;
+            color: var(--muted);
+            font-weight: 400;
+            margin-top: -2px;
+        }
+        .cell.highlight-k {
+            border-color: var(--accent);
+            background: rgba(56,189,248,.12);
+            box-shadow: 0 0 20px rgba(56,189,248,.25);
+            transform: translateY(-6px);
+        }
+        .cell.highlight-j {
+            border-color: var(--purple);
+            background: rgba(167,139,250,.12);
+        }
+        .cell.highlight-i {
+            border-color: var(--green);
+            background: rgba(74,222,128,.12);
+        }
+        .cell.highlight-pop {
+            border-color: var(--red);
+            background: rgba(248,113,113,.15);
+        }
+        .cell.highlight-found {
+            border-color: var(--green) !important;
+            background: rgba(74,222,128,.2) !important;
+            animation: pulse 0.6s ease-in-out infinite;
+        }
+        .cell.in-stack {
+            border-color: var(--yellow);
+            background: rgba(251,191,36,.1);
+        }
+
+        @keyframes pulse {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* 栈展示 */
+        .stack-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stack-visual {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 2px;
+            align-items: center;
+            min-height: 60px;
+            background: rgba(30,41,59,.6);
+            border: 2px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            padding: 8px 16px 12px;
+            position: relative;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+        .stack-visual::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -4px;
+            right: -4px;
+            height: 8px;
+            background: linear-gradient(to bottom, var(--yellow), #b45309);
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 4px 12px rgba(251,191,36,.3);
+        }
+        .stack-visual.has-items {
+            border-top: 2px dashed var(--border);
+            border-radius: 14px 14px 14px 14px;
+        }
+        .stack-bottom-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 6px;
+            letter-spacing: 2px;
+        }
+        .stack-top-label {
+            font-size: 0.7rem;
+            color: var(--accent);
+            margin-bottom: 2px;
+            letter-spacing: 2px;
+        }
+        .stack-item {
+            width: 70px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            background: rgba(251,191,36,.12);
+            border: 2px solid var(--yellow);
+            color: var(--yellow);
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+        .stack-item .idx {
+            font-size: 0.6rem;
+            opacity: .7;
+            font-weight: 400;
+        }
+        .stack-item.new {
+            animation: slideDown 0.4s ease-out;
+        }
+        .stack-item.popping {
+            animation: popUp 0.35s ease-in forwards;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes popUp {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-30px); opacity: 0; }
+        }
+
+        .stack-pointer {
+            font-size: 0.7rem;
+            color: var(--accent);
+            animation: bounce 1s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* min_candidate 栏 */
+        .min-array {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .min-cell {
+            width: 56px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            transition: all 0.3s;
+        }
+        .min-cell .idx {
+            font-size: 0.6rem;
+            opacity: .6;
+        }
+        .min-cell.active-min {
+            border-color: var(--green);
+            color: var(--green);
+            background: rgba(74,222,128,.1);
+        }
+
+        /* 日志 */
+        .log-area {
+            background: var(--bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+        }
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(148,163,184,.08);
+        }
+        .log-line .time {
+            color: var(--muted);
+            margin-right: 8px;
+            font-size: 0.75rem;
+        }
+        .log-line.success { color: var(--green); }
+        .log-line.info { color: var(--accent); }
+        .log-line.warn { color: var(--yellow); }
+        .log-line.error { color: var(--red); }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend .swatch {
+            width: 12px; height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* 结果提示 */
+        .result-banner {
+            text-align: center;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-top: 4px;
+            display: none;
+            transition: all 0.4s;
+        }
+        .result-banner.show { display: block; }
+        .result-banner.true {
+            background: rgba(74,222,128,.15);
+            border: 1px solid var(--green);
+            color: var(--green);
+        }
+        .result-banner.false {
+            background: rgba(248,113,113,.15);
+            border: 1px solid var(--red);
+            color: var(--red);
+        }
+
+        /* 模式提示 */
+        .pattern-explain {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-top: 6px;
+            text-align: center;
+        }
+        .pattern-explain code {
+            background: rgba(56,189,248,.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔍 132 模式检测</h1>
+    <p class="subtitle">单调栈算法 · 寻找 nums[i] &lt; nums[k] &lt; nums[j] 且 i &lt; j &lt; k</p>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <label>输入数组：</label>
+        <input type="text" id="inputArray" value="3, 1, 4, 2" placeholder="例如: 3, 1, 4, 2">
+        <button class="btn-run" onclick="initAndRun()">🚀 重置并运行</button>
+        <button class="btn-step" id="btnStep" onclick="step()">⏭ 单步执行</button>
+        <button class="btn-auto" id="btnAuto" onclick="toggleAuto()">▶ 自动播放</button>
+        <button class="btn-speed" onclick="changeSpeed()" id="btnSpeed">⏱ 1x</button>
+    </div>
+
+    <!-- 步骤标签 -->
+    <div class="step-indicator">
+        <span class="step-tag" id="tagPhase1">① 构建 min_candidate 数组</span>
+        <span class="step-tag" id="tagPhase2">② 单调栈扫描</span>
+        <span class="step-tag" id="tagResult">🏁 结果</span>
+    </div>
+
+    <!-- 结果横幅 -->
+    <div class="result-banner" id="resultBanner"></div>
+
+    <!-- 原始数组 -->
+    <div class="panel">
+        <h3><span class="dot" style="background:var(--accent)"></span> 原始数组 nums</h3>
+        <div class="array-row" id="arrayDisplay"></div>
+        <div class="legend">
+            <span><span class="swatch" style="background:var(--accent)"></span> 当前遍历 k</span>
+            <span><span class="swatch" style="background:var(--purple)"></span> 栈顶 j</span>
+            <span><span class="swatch" style="background:var(--green)"></span> 对应 i (最小值)</span>
+            <span><span class="swatch" style="background:var(--yellow)"></span> 在栈中</span>
+            <span><span class="swatch" style="background:var(--red)"></span> 被弹出</span>
+        </div>
+    </div>
+
+    <!-- min_candidate 数组 -->
+    <div class="panel">
+        <h3><span class="dot" style="background:var(--green)"></span> min_candidate[] — 左侧最小值</h3>
+        <div class="min-array" id="minDisplay"></div>
+    </div>
+
+    <!-- 栈 -->
+    <div class="panel">
+        <h3><span class="dot" style="background:var(--yellow)"></span> 单调栈 stack（存下标，对应 nums 值递减）</h3>
+        <div class="stack-wrapper">
+            <span class="stack-top-label">▲ 栈顶</span>
+            <div class="stack-visual" id="stackDisplay">
+                <span style="color:var(--muted);font-size:0.85rem;">栈为空</span>
+            </div>
+            <span class="stack-bottom-label">▼ 栈底</span>
+        </div>
+    </div>
+
+    <!-- 日志 -->
+    <div class="panel">
+        <h3><span class="dot" style="background:var(--pink)"></span> 执行日志</h3>
+        <div class="log-area" id="logArea">
+            <div class="log-line"><span class="time">--</span> 等待开始...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============ 算法状态机 ============
+let state = {
+    nums: [],
+    n: 0,
+    minCandidate: [],
+    stack: [],
+    k: 0,              // 当前遍历索引
+    phase: 'init',     // 'init' | 'phase1' | 'phase2' | 'done'
+    found: false,
+    foundTriple: null,
+    phase1Idx: 0,
+    stepCount: 0,
+    autoInterval: null,
+    speed: 1000,       // ms per step
+    logs: [],
+    snapshotStack: []  // for animation
+};
+
+function parseNums(str) {
+    return str.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+}
+
+function log(msg, cls = 'info') {
+    const now = new Date().toLocaleTimeString();
+    state.logs.push({ time: now, msg, cls });
+    renderLogs();
+}
+
+function renderLogs() {
+    const area = document.getElementById('logArea');
+    const recent = state.logs.slice(-30);
+    area.innerHTML = recent.map(l =>
+        `<div class="log-line ${l.cls}"><span class="time">${l.time}</span>${l.msg}</div>`
+    ).join('');
+    area.scrollTop = area.scrollHeight;
+}
+
+// ============ 渲染 ============
+function renderAll(animHints = {}) {
+    renderArray(animHints);
+    renderMinCandidate();
+    renderStack(animHints);
+    renderPhaseTags();
+    renderResultBanner();
+}
+
+function renderArray(animHints = {}) {
+    const container = document.getElementById('arrayDisplay');
+    if (!state.nums.length) {
+        container.innerHTML = '<span style="color:var(--muted)">等待输入...</span>';
+        return;
+    }
+    container.innerHTML = state.nums.map((v, idx) => {
+        let cls = 'cell';
+        if (animHints.popIdx === idx) cls += ' highlight-pop';
+        if (state.found && state.foundTriple) {
+            const [fi, fj, fk] = state.foundTriple;
+            if (idx === fi) cls += ' highlight-found';
+            if (idx === fj) cls += ' highlight-found';
+            if (idx === fk) cls += ' highlight-found';
+        }
+        if (state.phase === 'phase2' && state.stack.includes(idx)) cls += ' in-stack';
+        if (state.phase === 'phase2' && idx === state.k && !state.found && state.phase !== 'done') cls += ' highlight-k';
+        if (state.phase === 'phase2' && state.stack.length && idx === state.stack[state.stack.length - 1] && !animHints.popIdx) cls += ' highlight-j';
+        if (state.phase === 'phase2' && state.stack.includes(idx) &&
+            idx === state.stack[state.stack.length - 1] && state.minCandidate[idx] !== Infinity && !state.found) {
+            // show potential i for stack top
+        }
+        return `<div class="${cls}"><span>${v}</span><span class="idx">[${idx}]</span></div>`;
+    }).join('');
+}
+
+function renderMinCandidate() {
+    const container = document.getElementById('minDisplay');
+    if (!state.minCandidate.length) {
+        container.innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">尚未计算</span>';
+        return;
+    }
+    container.innerHTML = state.minCandidate.map((v, idx) => {
+        let cls = 'min-cell';
+        if (state.phase === 'phase2' && state.stack.length &&
+            idx === state.stack[state.stack.length - 1] && !state.found) cls += ' active-min';
+        return `<div class="${cls}">${v === Infinity ? '∞' : v}<span class="idx">[${idx}]</span></div>`;
+    }).join('');
+}
+
+function renderStack(animHints = {}) {
+    const container = document.getElementById('stackDisplay');
+    if (!state.stack.length) {
+        container.classList.remove('has-items');
+        container.innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">栈为空</span>';
+        return;
+    }
+    container.classList.add('has-items');
+    container.innerHTML = state.stack.map((idx, i) => {
+        let cls = 'stack-item';
+        if (animHints.newPush && i === state.stack.length - 1) cls += ' new';
+        return `<div class="${cls}">${state.nums[idx]}<span class="idx">[${idx}]</span></div>`;
+    }).join('');
+}
+
+function renderPhaseTags() {
+    const t1 = document.getElementById('tagPhase1');
+    const t2 = document.getElementById('tagPhase2');
+    const tr = document.getElementById('tagResult');
+
+    t1.className = 'step-tag';
+    t2.className = 'step-tag';
+    tr.className = 'step-tag';
+
+    if (state.phase === 'phase1') t1.classList.add('active');
+    else if (state.phase !== 'init') t1.classList.add('done');
+
+    if (state.phase === 'phase2') t2.classList.add('active');
+    else if (state.phase === 'done') t2.classList.add('done');
+
+    if (state.phase === 'done') tr.classList.add('active');
+}
+
+function renderResultBanner() {
+    const banner = document.getElementById('resultBanner');
+    if (state.phase !== 'done') {
+        banner.classList.remove('show', 'true', 'false');
+        return;
+    }
+    banner.classList.add('show');
+    if (state.found) {
+        const [fi, fj, fk] = state.foundTriple;
+        banner.className = 'result-banner show true';
+        banner.innerHTML = `✅ 找到了 132 模式！<br><span style="font-size:0.9rem;font-weight:400">
+            nums[${fi}]=${state.nums[fi]} &lt; nums[${fk}]=${state.nums[fk]} &lt; nums[${fj}]=${state.nums[fj]}</span>`;
+    } else {
+        banner.className = 'result-banner show false';
+        banner.innerHTML = '❌ 未找到 132 模式';
+    }
+}
+
+// ============ 算法执行 ============
+function initAndRun() {
+    stopAuto();
+    const input = document.getElementById('inputArray').value;
+    const nums = parseNums(input);
+
+    if (nums.length < 3) {
+        log('⚠ 数组长度至少为 3', 'warn');
+        return;
+    }
+
+    state = {
+        nums,
+        n: nums.length,
+        minCandidate: [],
+        stack: [],
+        k: 0,
+        phase: 'phase1',
+        found: false,
+        foundTriple: null,
+        phase1Idx: 0,
+        stepCount: 0,
+        autoInterval: null,
+        speed: state.speed || 1000,
+        logs: [],
+        snapshotStack: []
+    };
+
+    state.minCandidate = new Array(state.n).fill(Infinity);
+    state.minCandidate[0] = state.nums[0];
+
+    log(`📥 输入数组: [${nums.join(', ')}]`, 'info');
+    log(`🔢 数组长度 n = ${state.n}`, 'info');
+    log(`🟢 阶段一：构建 min_candidate，min_candidate[0] = nums[0] = ${nums[0]}`, 'info');
+
+    renderAll();
+}
+
+function stepPhase1() {
+    if (state.phase1Idx === 0) {
+        state.phase1Idx = 1;
+        renderAll();
+        return;
+    }
+
+    if (state.phase1Idx < state.n) {
+        const i = state.phase1Idx;
+        const prev = state.minCandidate[i - 1];
+        const curr = state.nums[i];
+        state.minCandidate[i] = Math.min(prev, curr);
+        log(`  min_candidate[${i}] = min(${prev}, ${curr}) = ${state.minCandidate[i]}`, 'info');
+        state.phase1Idx++;
+        renderAll();
+    }
+
+    if (state.phase1Idx >= state.n) {
+        // phase 1 complete
+        log(`✅ 阶段一完成：min_candidate = [${state.minCandidate.map(v => v === Infinity ? '∞' : v).join(', ')}]`, 'success');
+        state.phase = 'phase2';
+        state.k = 0;
+        log(`🟣 阶段二：单调栈扫描开始`, 'info');
+        renderAll();
+    }
+}
+
+function stepPhase2() {
+    if (state.k >= state.n) {
+        // 遍历结束，未找到
+        state.phase = 'done';
+        state.found = false;
+        log(`🏁 遍历结束，未找到 132 模式`, 'error');
+        renderAll();
+        return;
+    }
+
+    const k = state.k;
+    const numK = state.nums[k];
+    log(`🔍 处理 k=${k}，nums[${k}] = ${numK}`, 'info');
+
+    // while stack and nums[stack[-1]] <= nums[k]: pop
+    let popCount = 0;
+    while (state.stack.length > 0 && state.nums[state.stack[state.stack.length - 1]] <= numK) {
+        const popped = state.stack.pop();
+        popCount++;
+        log(`  🔴 pop: nums[${popped}] = ${state.nums[popped]} ≤ ${numK}`, 'warn');
+        // render with pop animation
+        renderAll({ popIdx: popped });
+    }
+
+    if (popCount === 0 && state.stack.length > 0) {
+        log(`  ⏸ stack 栈顶 nums[${state.stack[state.stack.length - 1]}] = ${state.nums[state.stack[state.stack.length - 1]]} > ${numK}，不弹出`, 'info');
+    }
+
+    // check if stack and min_candidate[stack[-1]] < nums[k]
+    if (state.stack.length > 0) {
+        const j = state.stack[state.stack.length - 1];
+        const minI = state.minCandidate[j];
+        log(`  🔎 检查：min_candidate[stack顶=${j}] = ${minI} < nums[${k}] = ${numK} ?`, 'info');
+
+        if (minI < numK) {
+            state.found = true;
+            state.foundTriple = [minI, j, k]; // actually need the index of minI
+            // Find the actual i index
+            let actualI = 0;
+            for (let ii = 0; ii <= j; ii++) {
+                if (state.nums[ii] === minI) { actualI = ii; break; }
+            }
+            state.foundTriple = [actualI, j, k];
+            state.phase = 'done';
+            log(`✅ 找到了！min_candidate[${j}]=${minI} < nums[${k}]=${numK}`, 'success');
+            log(`🎯 132 模式：nums[${actualI}]=${state.nums[actualI]} < nums[${k}]=${numK} < nums[${j}]=${state.nums[j]}`, 'success');
+            renderAll();
+            return;
+        } else {
+            log(`  ❌ ${minI} ≥ ${numK}，不满足条件`, 'info');
+        }
+    } else {
+        log(`  📭 栈为空，跳过检查`, 'info');
+    }
+
+    // push k onto stack
+    state.stack.push(k);
+    log(`  🟡 push: 将 k=${k} (nums[${k}]=${numK}) 压入栈`, 'info');
+    state.k++;
+    renderAll({ newPush: true });
+}
+
+function step() {
+    if (state.phase === 'init') return;
+    if (state.phase === 'done') {
+        log(`⏹ 算法已结束`, 'info');
+        return;
+    }
+
+    state.stepCount++;
+
+    if (state.phase === 'phase1') {
+        stepPhase1();
+    } else if (state.phase === 'phase2') {
+        stepPhase2();
+    }
+}
+
+function toggleAuto() {
+    const btn = document.getElementById('btnAuto');
+    if (state.autoInterval) {
+        stopAuto();
+        btn.textContent = '▶ 自动播放';
+    } else {
+        if (state.phase === 'done') {
+            log('⏹ 算法已结束，请先重置', 'info');
+            return;
+        }
+        if (state.phase === 'init') {
+            initAndRun();
+        }
+        btn.textContent = '⏸ 暂停';
+        state.autoInterval = setInterval(() => {
+            if (state.phase === 'done') {
+                stopAuto();
+                btn.textContent = '▶ 自动播放';
+                return;
+            }
+            step();
+        }, state.speed);
+    }
+}
+
+function stopAuto() {
+    if (state.autoInterval) {
+        clearInterval(state.autoInterval);
+        state.autoInterval = null;
+    }
+    document.getElementById('btnAuto').textContent = '▶ 自动播放';
+}
+
+function changeSpeed() {
+    const speeds = [2000, 1000, 500, 200, 100];
+    const labels = ['0.5x', '1x', '2x', '5x', '10x'];
+    const current = speeds.indexOf(state.speed);
+    const next = (current + 1) % speeds.length;
+    state.speed = speeds[next];
+    document.getElementById('btnSpeed').textContent = '⏱ ' + labels[next];
+
+    if (state.autoInterval) {
+        stopAuto();
+        toggleAuto();
+    }
+}
+
+// ============ 键盘快捷键 ============
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        step();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (state.autoInterval) stopAuto();
+        initAndRun();
+    } else if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        toggleAuto();
+    }
+});
+
+// ============ 初始渲染 ============
+initAndRun();
+</script>
+</body>
+</html>
