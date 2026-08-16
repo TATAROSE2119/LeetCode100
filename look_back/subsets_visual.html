@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LeetCode 78 子集：回溯算法动态演示">
+    <title>子集 · 回溯可视化</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --surface: rgba(255,255,255,.92);
+            --surface-solid: #ffffff;
+            --ink: #172033;
+            --muted: #6f7d94;
+            --line: #dfe6f0;
+            --blue: #2878ff;
+            --blue-soft: #eaf2ff;
+            --cyan: #08a9c9;
+            --cyan-soft: #e5f9fc;
+            --violet: #7357e8;
+            --violet-soft: #f0edff;
+            --amber: #f5a524;
+            --amber-soft: #fff6df;
+            --green: #16a36a;
+            --green-soft: #e8f8f1;
+            --red: #e65454;
+            --red-soft: #fff0f0;
+            --navy: #13213d;
+            --shadow: 0 18px 45px rgba(30,53,88,.08);
+            --shadow-sm: 0 8px 24px rgba(30,53,88,.07);
+            --radius: 20px;
+        }
+        *{box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{
+            min-height:100vh;margin:0;padding:28px;color:var(--ink);
+            background:radial-gradient(circle at 6% 5%,rgba(40,120,255,.10),transparent 25%),
+                       radial-gradient(circle at 94% 4%,rgba(115,87,232,.09),transparent 23%),var(--bg);
+            font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+        }
+        button,input{font:inherit}
+        button:focus-visible,input:focus-visible{outline:3px solid rgba(40,120,255,.22);outline-offset:2px}
+        .page-shell{max-width:1680px;margin:0 auto}
+        .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px}
+        .eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--blue);font-size:.75rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+        .eyebrow::before{content:"";width:24px;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--violet))}
+        h1{margin:0;font-size:clamp(1.7rem,2.6vw,2.55rem);line-height:1.16;letter-spacing:-.045em}
+        .hero p{max-width:620px;margin:9px 0 0;color:var(--muted);font-size:.9rem;line-height:1.7}
+        .complexity-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+        .chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:rgba(255,255,255,.72);font-size:.74rem;font-weight:700;white-space:nowrap}
+        .chip strong{color:var(--ink)}
+        .toolbar{display:grid;grid-template-columns:minmax(280px,1fr) auto;gap:14px;align-items:center;margin-bottom:18px;padding:13px 15px;border:1px solid rgba(223,230,240,.9);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm);backdrop-filter:blur(12px)}
+        .input-wrap{display:flex;min-width:0;align-items:center;gap:10px}
+        .input-wrap label{flex:0 0 auto;color:var(--muted);font-size:.76rem;font-weight:750}
+        .input-wrap input{width:100%;min-width:160px;padding:10px 13px;border:1px solid var(--line);border-radius:11px;color:var(--ink);background:#f8faff;font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:.82rem;transition:.2s ease}
+        .input-wrap input:focus{border-color:var(--blue);background:#fff}
+        .actions{display:flex;align-items:center;gap:8px}
+        .btn{min-height:38px;padding:0 13px;border:1px solid transparent;border-radius:11px;background:transparent;color:var(--ink);cursor:pointer;font-size:.76rem;font-weight:750;transition:transform .16s ease,box-shadow .16s ease,background .16s ease;white-space:nowrap}
+        .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 7px 16px rgba(30,53,88,.10)}
+        .btn:active:not(:disabled){transform:translateY(0)}
+        .btn:disabled{cursor:not-allowed;opacity:.42}
+        .btn-ghost{border-color:var(--line);background:#fff}
+        .btn-step{border-color:#d8d0ff;color:var(--violet);background:var(--violet-soft)}
+        .btn-primary{min-width:84px;color:#fff;background:linear-gradient(135deg,var(--blue),#6254e9)}
+        .btn-primary.running{background:linear-gradient(135deg,#eb7e38,var(--amber))}
+        .speed{min-width:58px;padding:0 10px;border:1px solid var(--line);border-radius:11px;color:var(--muted);background:#fff;cursor:pointer;font-size:.72rem;font-weight:800}
+        .error{display:none;grid-column:1/-1;margin:-3px 0 0;color:var(--red);font-size:.74rem;font-weight:650}
+        .error.show{display:block}
+        .workspace{display:grid;grid-template-columns:288px minmax(520px,1fr) 320px;gap:18px;align-items:start}
+        .column-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;font-size:.76rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+        .column-title span{color:var(--muted);font-size:.67rem;font-weight:650;letter-spacing:0;text-transform:none}
+        .left-column,.right-column{position:sticky;top:18px}
+        .card{border:1px solid rgba(223,230,240,.95);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-sm);overflow:hidden;backdrop-filter:blur(12px)}
+        .principle{padding:19px}
+        .section+.section{margin-top:20px}
+        .section-kicker{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.76rem;font-weight:800}
+        .section-kicker .num{display:grid;width:22px;height:22px;place-items:center;border-radius:7px;color:var(--blue);background:var(--blue-soft);font-size:.66rem}
+        .section p,.section li{color:#58677e;font-size:.76rem;line-height:1.72}
+        .section p{margin:0}
+        .section ol{margin:4px 0 0;padding-left:20px}
+        .section li+li{margin-top:5px}
+        .section li::marker{color:var(--blue);font-weight:800}
+        .why-box{margin-top:10px;padding:11px 12px;border-left:3px solid var(--amber);border-radius:4px 10px 10px 4px;color:#7c601f;background:var(--amber-soft);font-size:.72rem;line-height:1.65}
+        .code-box{margin-top:10px;padding:9px 0;overflow:hidden;border-radius:13px;color:#c8d6ee;background:var(--navy);font-family:"SFMono-Regular",Consolas,monospace;font-size:.66rem;line-height:1.65}
+        .code-line{display:grid;grid-template-columns:22px 1fr;gap:7px;min-height:22px;padding:2px 11px;white-space:pre;transition:.2s ease}
+        .code-line .ln{color:#637493;text-align:right;user-select:none}
+        .code-line.active{color:#fff;background:rgba(40,120,255,.33)}
+        .code-line.active .ln{color:#91bcff}
+        .center-column{min-width:0}
+        .status-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+        .metric{min-width:0;padding:13px 14px;border:1px solid var(--line);border-radius:15px;background:var(--surface-solid);box-shadow:var(--shadow-sm)}
+        .metric-label{overflow:hidden;color:var(--muted);font-size:.65rem;font-weight:750;letter-spacing:.04em;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap}
+        .metric-value{margin-top:4px;overflow:hidden;color:var(--ink);font-size:1.23rem;font-weight:850;letter-spacing:-.03em;text-overflow:ellipsis;white-space:nowrap}
+        .metric-value.blue{color:var(--blue)}
+        .metric-value.green{color:var(--green)}
+        .metric-value.violet{color:var(--violet)}
+        .visual-card{padding:18px}
+        .visual-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+        .phase-name{margin:0 0 4px;font-size:.96rem;font-weight:850}
+        .phase-desc{margin:0;color:var(--muted);font-size:.74rem;line-height:1.5}
+        .iteration-pill{flex:0 0 auto;padding:7px 10px;border-radius:999px;color:var(--blue);background:var(--blue-soft);font-size:.68rem;font-weight:800}
+
+        /* —— 元素行 —— */
+        .element-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;border-radius:13px;background:#f8faff;overflow-x:auto}
+        .element-row-label{flex:0 0 auto;color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+        .elem{position:relative;display:grid;width:42px;height:42px;place-items:center;border-radius:11px;background:#edf1f6;color:var(--muted);font-weight:800;font-size:.85rem;transition:.3s ease}
+        .elem.included{background:var(--blue-soft);color:var(--blue);box-shadow:0 0 0 3px rgba(40,120,255,.16)}
+        .elem.excluded{background:#f3f5f9;color:#b0bccf;text-decoration:line-through}
+        .elem.current{box-shadow:0 0 0 4px rgba(115,87,232,.22);color:var(--violet);background:var(--violet-soft)}
+        .elem-badge{position:absolute;top:-8px;right:-8px;display:none;width:18px;height:18px;border-radius:50%;font-size:.55rem;font-weight:900;line-height:18px;text-align:center}
+        .elem.included .elem-badge{display:block;background:var(--blue);color:#fff;content:"✓"}
+        .elem.excluded .elem-badge{display:block;background:#b0bccf;color:#fff}
+
+        /* —— 当前子集 —— */
+        .curr-subset-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 14px;border-radius:11px;background:linear-gradient(135deg,var(--violet-soft),#f3efff);border:1px solid #e0d8ff}
+        .curr-subset-label{flex:0 0 auto;color:var(--violet);font-size:.68rem;font-weight:800}
+        .curr-subset-tags{display:flex;gap:6px;flex-wrap:wrap;min-height:28px;align-items:center}
+        .curr-tag{padding:4px 10px;border-radius:7px;background:var(--violet);color:#fff;font-size:.72rem;font-weight:750;animation:popIn .3s ease}
+        .curr-empty{color:#b0bccf;font-size:.72rem;font-style:italic}
+        @keyframes popIn{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+        /* —— 调用栈帧 —— */
+        .stack-section{margin-bottom:12px}
+        .stack-label{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+        .stack-label-text{color:var(--muted);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+        .stack-depth-badge{padding:2px 8px;border-radius:99px;background:var(--navy);color:#91a0bd;font-family:"SFMono-Regular",Consolas,monospace;font-size:.58rem;font-weight:750}
+        .stack-action{display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;padding:7px 10px;border-radius:9px;font-family:"SFMono-Regular",Consolas,monospace;font-size:.64rem;font-weight:800}
+        .stack-action.show{display:flex}
+        .stack-action.push{color:var(--blue);background:var(--blue-soft);border:1px solid #d4e4ff}
+        .stack-action.pop{color:#bd7510;background:var(--amber-soft);border:1px solid #f5dfab}
+        .stack-frames{display:flex;flex-direction:column-reverse;gap:3px;min-height:36px;padding:6px;border:1px solid #e0e6f0;border-radius:13px;background:linear-gradient(180deg,#f8f9fc,#f0f3f8)}
+        .stack-frame{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:9px;background:#fff;border:1px solid #e8ecf3;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .3s ease;animation:slideDown .3s ease}
+        .stack-frame:last-child{border-color:#d5d8f0;background:linear-gradient(135deg,#f7f5ff,#f0edff)}
+        .stack-frame.just-pushed{box-shadow:0 0 0 3px rgba(40,120,255,.15);animation:framePush .35s ease}
+        .stack-frame.popped-ghost{border:1px dashed var(--amber);color:#a76b12;background:var(--amber-soft);opacity:.82;box-shadow:none}
+        .stack-frame.phase-decide{border-left:3px solid var(--violet)}
+        .stack-frame.phase-select{border-left:3px solid var(--blue)}
+        .stack-frame.phase-backtrack{border-left:3px solid var(--amber)}
+        .stack-frame.phase-skip{border-left:3px solid #b0bccf}
+        .stack-frame.phase-collect{border-left:3px solid var(--green)}
+        .stack-frame.phase-return{border-left:3px solid var(--amber)}
+        .stack-frame-index{font-family:"SFMono-Regular",Consolas,monospace;font-size:.7rem;font-weight:850;color:var(--violet);white-space:nowrap}
+        .stack-frame-info{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden}
+        .stack-frame-curr{font-family:"SFMono-Regular",Consolas,monospace;font-size:.64rem;color:#65738a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .stack-frame-phase{padding:2px 7px;border-radius:5px;font-size:.58rem;font-weight:800;white-space:nowrap;flex:0 0 auto}
+        .stack-frame-phase.p-decide{background:var(--violet-soft);color:var(--violet)}
+        .stack-frame-phase.p-select{background:var(--blue-soft);color:var(--blue)}
+        .stack-frame-phase.p-backtrack{background:var(--amber-soft);color:#b87a14}
+        .stack-frame-phase.p-skip{background:#f3f5f9;color:#8e99ae}
+        .stack-frame-phase.p-collect{background:var(--green-soft);color:var(--green)}
+        .stack-frame-phase.p-return{background:var(--amber-soft);color:#b87a14}
+        @keyframes slideDown{0%{transform:translateY(-10px);opacity:0}100%{transform:translateY(0);opacity:1}}
+        @keyframes framePush{0%{transform:translateY(-12px) scale(.97);opacity:.2}100%{transform:translateY(0) scale(1);opacity:1}}
+
+        /* —— 决策树 —— */
+        .tree-shell{position:relative;margin:0 0 10px;overflow:auto;border:1px solid #e4eaf3;border-radius:17px;background:linear-gradient(180deg,#fafdff,#f6f9fd)}
+        .tree-inner{position:relative;min-height:300px}
+        .tree-svg{display:block;width:100%}
+        .tree-svg .node-circle{transition:fill .3s ease,stroke .3s ease,stroke-width .3s ease,r .25s ease}
+        .tree-svg .node-text{font-family:"SFMono-Regular",Consolas,monospace;font-weight:800;pointer-events:none;user-select:none;transition:fill .3s ease}
+        .tree-svg .connector{transition:stroke .3s ease,stroke-width .2s ease,opacity .25s ease}
+        .tree-svg .label-text{font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-weight:700;pointer-events:none;user-select:none;transition:fill .3s ease,opacity .3s ease}
+
+        /* —— 已发现子集 —— */
+        .subsets-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding:12px;min-height:44px;border:1px solid #e0e8f2;border-radius:14px;background:#fafdff;align-items:flex-start;align-content:flex-start;max-height:160px;overflow-y:auto}
+        .subset-tag{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;background:#e8f8f1;color:var(--green);font-family:"SFMono-Regular",Consolas,monospace;font-size:.7rem;font-weight:700;white-space:nowrap;animation:popIn .35s ease}
+        .subset-tag .bracket{color:#9abbaa;font-weight:400}
+        .subset-count{margin-top:8px;color:var(--muted);font-size:.66rem;font-weight:650}
+
+        .decision-panel{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:12px;padding:13px 15px;border:1px solid #dce8fa;border-radius:14px;background:#f7faff}
+        .decision-main{overflow-x:auto;color:#40516b;font-family:"SFMono-Regular",Consolas,monospace;font-size:clamp(.69rem,1.1vw,.81rem);line-height:1.7;white-space:nowrap}
+        .decision-main strong{color:var(--blue)}
+        .decision-result{min-width:70px;padding:8px 11px;border-radius:11px;color:var(--blue);background:var(--blue-soft);font-size:1.05rem;font-weight:900;text-align:center}
+        .decision-result.collected{color:var(--green);background:var(--green-soft);animation:pop .45s ease}
+        @keyframes pop{50%{transform:scale(1.09)}}
+        .progress-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+        .progress-track{flex:1;height:6px;overflow:hidden;border-radius:99px;background:#edf1f6}
+        .progress-fill{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),var(--violet));transition:width .35s ease}
+        .progress-text{min-width:58px;color:var(--muted);font-size:.66rem;font-weight:750;text-align:right}
+
+        .log-card{height:calc(100vh - 195px);min-height:540px;display:flex;flex-direction:column}
+        .log-head{display:flex;align-items:center;justify-content:space-between;padding:16px 17px 13px;border-bottom:1px solid var(--line)}
+        .log-head h2{margin:0;font-size:.85rem}
+        .live-dot{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.64rem;font-weight:750}
+        .live-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(22,163,106,.12)}
+        .log-list{flex:1;padding:9px 9px 15px;overflow-y:auto;scrollbar-color:#cbd5e1 transparent;scrollbar-width:thin}
+        .log-item{display:grid;grid-template-columns:28px minmax(0,1fr);gap:9px;padding:9px 8px;border-radius:11px;transition:.2s ease}
+        .log-item+.log-item{margin-top:2px}
+        .log-item.current{background:#f1f6ff}
+        .log-seq{display:grid;width:25px;height:25px;place-items:center;border-radius:8px;color:#78869b;background:#edf1f6;font-family:"SFMono-Regular",Consolas,monospace;font-size:.61rem;font-weight:800}
+        .log-item.enter .log-seq{color:var(--violet);background:var(--violet-soft)}
+        .log-item.call .log-seq{color:var(--violet);background:var(--violet-soft)}
+        .log-item.return .log-seq{color:#b87a14;background:var(--amber-soft)}
+        .log-item.include .log-seq{color:var(--blue);background:var(--blue-soft)}
+        .log-item.collect .log-seq{color:var(--green);background:var(--green-soft)}
+        .log-item.backtrack .log-seq{color:var(--amber);background:var(--amber-soft)}
+        .log-item.exclude .log-seq{color:#8e99ae;background:#f3f5f9}
+        .log-item.init .log-seq{color:var(--blue);background:var(--blue-soft)}
+        .log-item.done .log-seq{color:#9a6913;background:var(--amber-soft)}
+        .log-type{margin-bottom:3px;color:var(--ink);font-size:.68rem;font-weight:830}
+        .log-message{color:var(--muted);font-size:.7rem;line-height:1.55;word-break:break-word}
+        .log-item.current .log-message{color:#4b5d78}
+        .log-footer{padding:11px 16px;border-top:1px solid var(--line);color:var(--muted);background:#fafbfd;font-size:.66rem;line-height:1.5}
+        .kbd{display:inline-block;min-width:19px;margin:0 2px;padding:1px 5px;border:1px solid #cfd7e3;border-bottom-width:2px;border-radius:5px;color:#68768a;background:#fff;font-family:inherit;font-size:.6rem;font-weight:750;text-align:center}
+
+        @media(max-width:1270px){body{padding:20px}.workspace{grid-template-columns:250px minmax(470px,1fr) 280px;gap:14px}.principle{padding:16px}}
+        @media(max-width:1040px){.workspace{grid-template-columns:250px minmax(480px,1fr)}.right-column{grid-column:1/-1;position:static}.log-card{height:360px;min-height:0}}
+        @media(max-width:780px){body{padding:14px}.hero{align-items:flex-start;flex-direction:column}.complexity-chips{justify-content:flex-start}.toolbar{grid-template-columns:1fr}.actions{flex-wrap:wrap}.workspace{display:flex;flex-direction:column}.left-column,.center-column,.right-column{position:static;width:100%}.left-column{order:1}.center-column{order:2}.right-column{order:3}.status-strip{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:520px){.actions{display:grid;grid-template-columns:repeat(3,1fr);width:100%}.btn,.speed{min-width:0;padding:0 8px}}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    </style>
+</head>
+<body>
+<main class="page-shell">
+    <header class="hero">
+        <div>
+            <div class="eyebrow">LeetCode 78 · Backtracking</div>
+            <h1>子集</h1>
+            <p>对每个元素做出"选 / 不选"的二元决策，用深度优先搜索遍历整棵决策树，在叶子节点收集所有子集。</p>
+        </div>
+        <div class="complexity-chips" aria-label="算法复杂度">
+            <span class="chip">时间 <strong>O(n·2ⁿ)</strong></span>
+            <span class="chip">辅助空间 <strong>O(n)</strong></span>
+            <span class="chip">策略 <strong>回溯 + DFS</strong></span>
+        </div>
+    </header>
+
+    <section class="toolbar" aria-label="演示控制台">
+        <div class="input-wrap">
+            <label for="numsInput">数组 nums</label>
+            <input id="numsInput" type="text" value="1, 2, 3" autocomplete="off" spellcheck="false" aria-describedby="inputError">
+        </div>
+        <div class="actions">
+            <button class="btn btn-ghost" id="randomBtn" type="button">随机</button>
+            <button class="btn btn-ghost" id="resetBtn" type="button">应用数组</button>
+            <button class="btn btn-step" id="prevBtn" type="button" aria-label="上一步">← 上一步</button>
+            <button class="btn btn-step" id="nextBtn" type="button" aria-label="下一步">下一步 →</button>
+            <button class="btn btn-primary" id="autoBtn" type="button">▶ 自动播放</button>
+            <button class="speed" id="speedBtn" type="button" title="切换播放速度">1×</button>
+        </div>
+        <p class="error" id="inputError" role="alert"></p>
+    </section>
+
+    <div class="workspace">
+        <!-- ===== 左栏：算法原理 ===== -->
+        <aside class="left-column">
+            <h2 class="column-title">算法原理 <span>Why it works</span></h2>
+            <article class="card principle">
+                <section class="section">
+                    <div class="section-kicker"><span class="num">01</span> 问题本质</div>
+                    <p>给定 <code>n</code> 个不同元素的数组，求所有子集（幂集）。每个元素有<strong>选</strong>和<strong>不选</strong>两种可能，共 <strong>2ⁿ</strong> 个子集。</p>
+                </section>
+                <section class="section">
+                    <div class="section-kicker"><span class="num">02</span> 回溯策略</div>
+                    <ol>
+                        <li>从索引 <code>0</code> 开始，维护当前路径 <code>curr</code>。</li>
+                        <li>每次调用 <code>dfs(i)</code> 都压入一个栈帧；函数 return 时弹出该帧。</li>
+                        <li>对 <code>nums[i]</code>：<strong>选它</strong>（加入 curr），递归到 i+1。</li>
+                        <li>子调用返回后回溯：撤销选择，再走“不选”分支。</li>
+                        <li>当 i == n 时到达叶子，保存 <code>curr</code> 的副本。</li>
+                        <li>DFS 遍历完所有可能的决策组合。</li>
+                    </ol>
+                    <div class="why-box"><strong>核心洞察</strong><br>这是一棵完整的二叉决策树：左分支代表“选”，右分支代表“不选”。每条根到叶子的路径唯一对应一个子集，所以叶子总数为 2ⁿ，既不会遗漏，也不会重复。curr 是所有栈帧共享的可变路径；只有加入结果时才复制。</div>
+                </section>
+                <section class="section">
+                    <div class="section-kicker"><span class="num">03</span> 语言无关伪代码</div>
+                    <div class="code-box" id="codeBox" aria-label="回溯伪代码">
+                        <div class="code-line" data-line="1"><span class="ln">1</span><span>PROCEDURE DFS(index)</span></div>
+                        <div class="code-line" data-line="2"><span class="ln">2</span><span>  IF index == n</span></div>
+                        <div class="code-line" data-line="3"><span class="ln">3</span><span>    result.ADD(COPY(path))</span></div>
+                        <div class="code-line" data-line="4"><span class="ln">4</span><span>    RETURN</span></div>
+                        <div class="code-line" data-line="5"><span class="ln">5</span><span>  path.ADD(nums[index])</span></div>
+                        <div class="code-line" data-line="6"><span class="ln">6</span><span>  DFS(index + 1)</span></div>
+                        <div class="code-line" data-line="7"><span class="ln">7</span><span>  path.REMOVE_LAST()</span></div>
+                        <div class="code-line" data-line="8"><span class="ln">8</span><span>  // 不选择 nums[index]</span></div>
+                        <div class="code-line" data-line="9"><span class="ln">9</span><span>  DFS(index + 1)</span></div>
+                        <div class="code-line" data-line="10"><span class="ln">10</span><span>  RETURN</span></div>
+                    </div>
+                </section>
+            </article>
+        </aside>
+
+        <!-- ===== 中栏：算法流程 ===== -->
+        <section class="center-column" aria-label="算法动态展示">
+            <h2 class="column-title">动态展示流程 <span id="arraySummary">3 个元素 · 8 个子集</span></h2>
+
+            <div class="status-strip">
+                <article class="metric"><div class="metric-label">递归深度</div><div class="metric-value violet" id="depthMetric">0</div></article>
+                <article class="metric"><div class="metric-label">当前索引</div><div class="metric-value blue" id="indexMetric">0</div></article>
+                <article class="metric"><div class="metric-label">当前分支</div><div class="metric-value" id="branchMetric">—</div></article>
+                <article class="metric"><div class="metric-label">已发现子集</div><div class="metric-value green" id="countMetric">0</div></article>
+            </div>
+
+            <article class="card visual-card">
+                <div class="visual-head">
+                    <div>
+                        <h2 class="phase-name" id="phaseName">初始化</h2>
+                        <p class="phase-desc" id="phaseDesc">准备从索引 0 开始 DFS，curr = []。</p>
+                    </div>
+                    <div class="iteration-pill" id="iterationPill">准备阶段</div>
+                </div>
+
+                <!-- 元素决策行 -->
+                <div class="element-row" id="elementRow">
+                    <span class="element-row-label">元素</span>
+                </div>
+
+                <!-- 当前子集 -->
+                <div class="curr-subset-row">
+                    <span class="curr-subset-label">curr =</span>
+                    <div class="curr-subset-tags" id="currTags"><span class="curr-empty">[]</span></div>
+                </div>
+
+                <!-- 调用栈帧 -->
+                <div class="stack-section">
+                    <div class="stack-label">
+                        <span class="stack-label-text">调用栈</span>
+                        <span class="stack-depth-badge" id="stackDepthBadge">0 个栈帧</span>
+                    </div>
+                    <div class="stack-action" id="stackAction" aria-live="polite"></div>
+                    <div class="stack-frames" id="stackFrames"></div>
+                </div>
+
+                <!-- 决策树 SVG -->
+                <div class="tree-shell" id="treeShell">
+                    <div class="tree-inner" id="treeInner">
+                        <svg class="tree-svg" id="treeSvg"></svg>
+                    </div>
+                </div>
+
+                <!-- 已发现子集 -->
+                <div style="margin-top:6px">
+                    <span style="font-size:.68rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">已收集子集</span>
+                    <div class="subsets-grid" id="subsetsGrid"></div>
+                    <div class="subset-count" id="subsetCount">0 / 0</div>
+                </div>
+
+                <div class="decision-panel">
+                    <div class="decision-main" id="decisionMain">等待 DFS 开始…</div>
+                    <div class="decision-result" id="decisionResult">—</div>
+                </div>
+
+                <div class="progress-row">
+                    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="progress-text" id="progressText">0 / 0</div>
+                </div>
+            </article>
+        </section>
+
+        <!-- ===== 右栏：执行日志 ===== -->
+        <aside class="right-column">
+            <h2 class="column-title">执行日志 <span>Execution log</span></h2>
+            <article class="card log-card">
+                <div class="log-head"><h2>递归调用记录</h2><span class="live-dot">实时同步</span></div>
+                <div class="log-list" id="logList" aria-live="polite"></div>
+                <div class="log-footer">快捷键：<span class="kbd">←</span> 上一步　<span class="kbd">→</span> 下一步　<span class="kbd">Space</span> 播放 / 暂停</div>
+            </article>
+        </aside>
+    </div>
+</main>
+
+<script>
+    const els = {
+        input: document.getElementById('numsInput'),
+        inputError: document.getElementById('inputError'),
+        randomBtn: document.getElementById('randomBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        prevBtn: document.getElementById('prevBtn'),
+        nextBtn: document.getElementById('nextBtn'),
+        autoBtn: document.getElementById('autoBtn'),
+        speedBtn: document.getElementById('speedBtn'),
+        depthMetric: document.getElementById('depthMetric'),
+        indexMetric: document.getElementById('indexMetric'),
+        branchMetric: document.getElementById('branchMetric'),
+        countMetric: document.getElementById('countMetric'),
+        elementRow: document.getElementById('elementRow'),
+        currTags: document.getElementById('currTags'),
+        stackFrames: document.getElementById('stackFrames'),
+        stackDepthBadge: document.getElementById('stackDepthBadge'),
+        stackAction: document.getElementById('stackAction'),
+        treeShell: document.getElementById('treeShell'),
+        treeInner: document.getElementById('treeInner'),
+        treeSvg: document.getElementById('treeSvg'),
+        subsetsGrid: document.getElementById('subsetsGrid'),
+        subsetCount: document.getElementById('subsetCount'),
+        phaseName: document.getElementById('phaseName'),
+        phaseDesc: document.getElementById('phaseDesc'),
+        iterationPill: document.getElementById('iterationPill'),
+        decisionMain: document.getElementById('decisionMain'),
+        decisionResult: document.getElementById('decisionResult'),
+        progressFill: document.getElementById('progressFill'),
+        progressText: document.getElementById('progressText'),
+        logList: document.getElementById('logList'),
+        arraySummary: document.getElementById('arraySummary')
+    };
+
+    const speedOptions = [
+        { label: '0.5×', delay: 1800 },
+        { label: '1×', delay: 1100 },
+        { label: '1.5×', delay: 700 },
+        { label: '2×', delay: 420 }
+    ];
+
+    let nums = [];
+    let events = [];
+    let cursor = 0;
+    let timer = null;
+    let speedIndex = 1;
+    let treeNodes = [];       // 预计算的树节点
+    let collectedSubsets = []; // 已收集的子集
+
+    // ========== 输入解析 ==========
+    function parseInput(raw) {
+        const parts = raw.trim().split(/[\s,，]+/).filter(Boolean);
+        if (parts.length === 0) throw new Error('请输入至少 1 个整数。');
+        if (parts.length > 5) throw new Error('为保证决策树和调用栈清晰，最多演示 5 个元素。');
+        const values = parts.map(Number);
+        if (values.some(v => !Number.isSafeInteger(v))) throw new Error('元素必须是安全范围内的整数。');
+        if (new Set(values).size !== values.length) throw new Error('LeetCode 78 约定元素互不相同，请删除重复值。');
+        return values;
+    }
+
+    // ========== 预建决策树节点 ==========
+    function buildTreeNodes(numsArr) {
+        const n = numsArr.length;
+        const nodes = [];
+        // 根节点（虚拟，代表开始）
+        nodes.push({
+            id: 'root', path: '', level: -1, value: null,
+            isInclude: null, parentId: null, position: 0,
+            totalAtLevel: 1, subset: []
+        });
+        // 按层级生成所有节点
+        for (let level = 0; level <= n; level++) {
+            const count = Math.pow(2, level);
+            for (let pos = 0; pos < count; pos++) {
+                // 构建路径字符串: 每个位置用 L(include) / R(exclude) 表示
+                let path = '';
+                let subset = [];
+                let temp = pos;
+                for (let l = 0; l < level; l++) {
+                    const bit = (temp >> (level - 1 - l)) & 1;
+                    path += bit === 0 ? 'L' : 'R';
+                }
+                // 计算subset
+                for (let l = 0; l < level; l++) {
+                    const bit = (pos >> (level - 1 - l)) & 1;
+                    if (bit === 0) { // L = include
+                        subset.push(numsArr[l]);
+                    }
+                }
+                const isLeaf = level === n;
+                const parentPath = level > 0 ? path.slice(0, -1) : null;
+                const isInclude = level > 0 ? path[path.length - 1] === 'L' : null;
+                nodes.push({
+                    id: level === 0 ? 'level0' : `L${level}_${path}`,
+                    path,
+                    level,
+                    value: level < n ? numsArr[level] : null,
+                    isInclude,
+                    parentId: level === 0 ? 'root' : (level === 1 ? 'level0' : `L${level-1}_${parentPath}`),
+                    position: pos,
+                    totalAtLevel: count,
+                    subset: [...subset],
+                    isLeaf
+                });
+            }
+        }
+        return nodes;
+    }
+
+    // ========== 构建事件流（含调用栈快照） ==========
+    function buildEvents(numsArr) {
+        const n = numsArr.length;
+        const result = [];
+        let stepNum = 0;
+        const curr = [];
+        const collected = [];
+
+        // —— 调用栈管理 ——
+        const callStack = []; // curr 保存该栈帧入栈时的路径快照，仅用于讲解。
+        function pushFrame(index, currSnap, phase) {
+            callStack.push({ index, curr: [...currSnap], phase });
+        }
+        function popFrame() {
+            callStack.pop();
+        }
+        function updateTop(phase) {
+            if (callStack.length > 0) {
+                callStack[callStack.length - 1].phase = phase;
+            }
+        }
+        function snapshotStack() {
+            return callStack.map(f => ({ index: f.index, curr: [...f.curr], phase: f.phase }));
+        }
+
+        // 初始化时调用尚未发生，栈应为空。
+        result.push({
+            type: 'init', index: 0, depth: 0, curr: [], branch: '—',
+            callStack: snapshotStack(),
+            activeLines: [],
+            title: '初始化',
+            message: `调用栈为空，下一步调用 dfs(0)，准备处理 nums[0] = ${numsArr[0]}。`
+        });
+
+        function dfs(index, callLine = 1, callBranch = '根调用') {
+            // 每次调用 dfs 都新建并压入一个栈帧。
+            pushFrame(index, curr, 'enter');
+            stepNum++;
+            result.push({
+                type: 'call', index, depth: index, curr: [...curr], branch: callBranch,
+                callStack: snapshotStack(),
+                stackAction: 'push', pushedFrame: { ...callStack[callStack.length - 1], curr: [...curr] },
+                activeLines: [...new Set([callLine, 1])],
+                stepNum,
+                title: `压栈：dfs(${index})`,
+                message: `调用 dfs(${index})：压入新栈帧，入栈时 curr = [${curr.join(', ')}]。栈深度变为 ${callStack.length}。`
+            });
+
+            // ---- 到达叶子 ----
+            if (index === n) {
+                const copy = [...curr];
+                collected.push(copy);
+                stepNum++;
+                updateTop('collect', curr);
+                result.push({
+                    type: 'collect', index, depth: n, curr: [...curr], branch: '收集',
+                    collected: copy,
+                    callStack: snapshotStack(),
+                    activeLines: [2, 3],
+                    stepNum,
+                    title: `收集子集 [${copy.join(', ')}]`,
+                    message: `index == n，到达叶子节点。将 COPY(curr) = [${copy.join(', ')}] 加入结果集。当前共 ${collected.length} 个子集。`
+                });
+                const poppedFrame = { ...callStack[callStack.length - 1], curr: [...callStack[callStack.length - 1].curr] };
+                popFrame();
+                stepNum++;
+                result.push({
+                    type: 'return', index, depth: n, curr: [...curr], branch: '返回',
+                    callStack: snapshotStack(),
+                    stackAction: 'pop', poppedFrame,
+                    activeLines: [4],
+                    stepNum,
+                    title: `弹栈：dfs(${index}) return`,
+                    message: `叶子函数执行 return，弹出 dfs(${index}) 栈帧。栈深度变为 ${callStack.length}。`
+                });
+                return;
+            }
+
+            // ---- 进入 dfs(index) ----
+            stepNum++;
+            updateTop('decide', curr);
+            result.push({
+                type: 'decide', index, depth: index, curr: [...curr], branch: '决策',
+                callStack: snapshotStack(),
+                activeLines: [1],
+                stepNum,
+                title: `处理 dfs(${index})`,
+                message: `当前索引 ${index}，面对元素 nums[${index}] = ${numsArr[index]}，curr = [${curr.join(', ')}]。`
+            });
+
+            // ---- 分支一：选 ----
+            curr.push(numsArr[index]);
+            stepNum++;
+            updateTop('select', curr);
+            result.push({
+                type: 'include', index, depth: index + 1, curr: [...curr], branch: '选',
+                value: numsArr[index],
+                callStack: snapshotStack(),
+                activeLines: [5],
+                stepNum,
+                title: `选择 nums[${index}] = ${numsArr[index]}`,
+                message: `将 ${numsArr[index]} 加入 curr → [${curr.join(', ')}]；下一步调用 dfs(${index + 1})。`
+            });
+            dfs(index + 1, 6, '选后递归');
+
+            // ---- 回溯 ----
+            curr.pop();
+            stepNum++;
+            updateTop('backtrack', curr);
+            result.push({
+                type: 'backtrack', index, depth: index, curr: [...curr], branch: '回溯',
+                value: numsArr[index],
+                callStack: snapshotStack(),
+                activeLines: [7],
+                stepNum,
+                title: `回溯：撤销 nums[${index}]`,
+                message: `从 curr 弹出 ${numsArr[index]}，curr = [${curr.join(', ')}]，准备进入"不选"分支。`
+            });
+
+            // ---- 分支二：不选 ----
+            stepNum++;
+            updateTop('skip', curr);
+            result.push({
+                type: 'exclude', index, depth: index + 1, curr: [...curr], branch: '不选',
+                value: numsArr[index],
+                callStack: snapshotStack(),
+                activeLines: [8],
+                stepNum,
+                title: `不选 nums[${index}] = ${numsArr[index]}`,
+                message: `跳过 ${numsArr[index]}，curr 保持 [${curr.join(', ')}]；下一步调用 dfs(${index + 1})。`
+            });
+            dfs(index + 1, 9, '不选后递归');
+
+            // ---- 从 dfs(index) 返回 ----
+            const poppedFrame = { ...callStack[callStack.length - 1], curr: [...callStack[callStack.length - 1].curr] };
+            popFrame();
+            stepNum++;
+            result.push({
+                type: 'return', index, depth: index, curr: [...curr], branch: '返回',
+                callStack: snapshotStack(),
+                stackAction: 'pop', poppedFrame,
+                activeLines: [10],
+                stepNum,
+                title: `弹栈：dfs(${index}) return`,
+                message: `dfs(${index}) 的“选 / 不选”两条分支均已完成，执行 return 并弹出该栈帧。栈深度变为 ${callStack.length}。`
+            });
+        }
+
+        dfs(0, 1, '根调用');
+
+        result.push({
+            type: 'done', index: n, depth: 0, curr: [], branch: '完成',
+            callStack: snapshotStack(),
+            activeLines: [],
+            title: '全部子集生成完毕',
+            message: `共 ${collected.length} 个子集，回溯算法结束。`
+        });
+
+        return { events: result, collected };
+    }
+
+    // ========== 树节点状态管理 ==========
+    // nodeStatus: 'hidden' | 'visible' | 'active' | 'collected' | 'backtracked'
+    let nodeStateMap = {};
+
+    function getNodeStatus(nodeId) {
+        return nodeStateMap[nodeId] || 'hidden';
+    }
+
+    function setNodeStatus(nodeId, status) {
+        nodeStateMap[nodeId] = status;
+    }
+
+    function findNodeById(id) {
+        return treeNodes.find(n => n.id === id);
+    }
+
+    function findLeafNode(subset) {
+        return treeNodes.find(n => {
+            if (!n.isLeaf) return false;
+            if (n.subset.length !== subset.length) return false;
+            return n.subset.every((v, i) => v === subset[i]);
+        });
+    }
+
+    // ========== 渲染 ==========
+    function resetVisualization() {
+        stopAuto();
+        try {
+            nums = parseInput(els.input.value);
+            els.inputError.classList.remove('show');
+            els.input.removeAttribute('aria-invalid');
+        } catch (e) {
+            els.inputError.textContent = e.message;
+            els.inputError.classList.add('show');
+            els.input.setAttribute('aria-invalid', 'true');
+            return;
+        }
+        treeNodes = buildTreeNodes(nums);
+        nodeStateMap = {};
+        collectedSubsets = [];
+        const result = buildEvents(nums);
+        events = result.events;
+        cursor = 0;
+        render();
+    }
+
+    function render() {
+        const event = events[cursor];
+        if (!event) return;
+
+        // 每次都根据 cursor 重建派生状态，保证“上一步”与随机跳转完全可逆。
+        rebuildAllState();
+
+        renderMetrics(event);
+        renderPhase(event);
+        renderElementRow(event);
+        renderCurrTags(event);
+        renderCallStack(event);
+        renderTree(event);
+        renderSubsets(event);
+        renderDecision(event);
+        renderCode(event.activeLines || []);
+        renderLogs();
+        renderProgress();
+        updateControls();
+        els.arraySummary.textContent = `${nums.length} 个元素 · ${Math.pow(2, nums.length)} 个子集`;
+    }
+
+    function markPathNodes(subset, depth, eventType) {
+        // 激活从 root 到当前 subset 的最右侧路径
+        // 实际上，在决策树中，当前 subset 对应一个特定节点
+        // 所有祖先节点设为 visible + active
+        const targetNode = findNodeBySubset(subset, depth);
+        if (!targetNode) return;
+
+        // 激活当前节点
+        setNodeStatus(targetNode.id, eventType === 'backtrack' ? 'backtracked' : 'active');
+
+        // 激活祖先链
+        let current = targetNode;
+        while (current && current.parentId) {
+            const parent = findNodeById(current.parentId);
+            if (parent) {
+                if (getNodeStatus(parent.id) === 'hidden') {
+                    setNodeStatus(parent.id, 'visible');
+                }
+                current = parent;
+            } else {
+                break;
+            }
+        }
+        if (getNodeStatus('root') === 'hidden') setNodeStatus('root', 'active');
+
+        // 同时激活兄弟节点为 visible（让用户看到选择）
+        if (targetNode.parentId) {
+            const siblings = treeNodes.filter(n => n.parentId === targetNode.parentId && n.id !== targetNode.id);
+            siblings.forEach(s => {
+                if (getNodeStatus(s.id) === 'hidden') setNodeStatus(s.id, 'visible');
+            });
+        }
+    }
+
+    function findNodeBySubset(subset, depth) {
+        return treeNodes.find(n => {
+            if (n.level !== depth) return false;
+            if (n.subset.length !== subset.length) return false;
+            return n.subset.every((v, i) => v === subset[i]);
+        });
+    }
+
+    function renderMetrics(event) {
+        els.depthMetric.textContent = event.depth;
+        els.indexMetric.textContent = (event.type === 'collect' || (event.type === 'return' && event.index === nums.length))
+            ? 'n (叶子)'
+            : event.index;
+        els.branchMetric.textContent = event.branch;
+        els.countMetric.textContent = collectedSubsets.length;
+    }
+
+    function renderPhase(event) {
+        els.phaseName.textContent = event.title;
+        els.phaseDesc.textContent = event.message;
+        if (event.type === 'init') els.iterationPill.textContent = '准备阶段';
+        else if (event.type === 'done') els.iterationPill.textContent = '演示完成';
+        else if (event.stepNum) els.iterationPill.textContent = `第 ${event.stepNum} 步`;
+        else els.iterationPill.textContent = '';
+    }
+
+    function renderElementRow(event) {
+        // 保留 label
+        els.elementRow.innerHTML = '<span class="element-row-label">元素</span>';
+        nums.forEach((val, i) => {
+            const div = document.createElement('div');
+            div.className = 'elem';
+            div.textContent = val;
+
+            // 决定状态
+            if (event.type === 'done') {
+                // 全部结束，不特殊标记
+            } else if (i < event.index || (event.type === 'collect' && i < nums.length)) {
+                // 已决定的元素：在 curr 中 = included，否则 = excluded
+                if (event.curr.includes(val)) {
+                    div.classList.add('included');
+                    const badge = document.createElement('span');
+                    badge.className = 'elem-badge';
+                    badge.textContent = '✓';
+                    div.appendChild(badge);
+                } else {
+                    div.classList.add('excluded');
+                    const badge = document.createElement('span');
+                    badge.className = 'elem-badge';
+                    badge.textContent = '✗';
+                    div.appendChild(badge);
+                }
+            } else if (i === event.index && event.type !== 'collect') {
+                div.classList.add('current');
+            }
+            els.elementRow.appendChild(div);
+        });
+    }
+
+    function renderCurrTags(event) {
+        els.currTags.innerHTML = '';
+        if (event.curr.length === 0) {
+            els.currTags.innerHTML = '<span class="curr-empty">[]</span>';
+        } else {
+            event.curr.forEach(v => {
+                const tag = document.createElement('span');
+                tag.className = 'curr-tag';
+                tag.textContent = v;
+                els.currTags.appendChild(tag);
+            });
+        }
+    }
+
+    // ========== 调用栈帧渲染 ==========
+    function renderCallStack(event) {
+        const stack = event.callStack || [];
+        els.stackFrames.innerHTML = '';
+        els.stackDepthBadge.textContent = `${stack.length} 个栈帧`;
+        els.stackAction.className = 'stack-action';
+        els.stackAction.textContent = '';
+
+        if (event.stackAction === 'push' && event.pushedFrame) {
+            els.stackAction.className = 'stack-action show push';
+            els.stackAction.innerHTML = `<span>↓ PUSH dfs(${event.pushedFrame.index})</span><span>${stack.length - 1} → ${stack.length}</span>`;
+        } else if (event.stackAction === 'pop' && event.poppedFrame) {
+            els.stackAction.className = 'stack-action show pop';
+            els.stackAction.innerHTML = `<span>↑ POP dfs(${event.poppedFrame.index})</span><span>${stack.length + 1} → ${stack.length}</span>`;
+        }
+
+        const phaseLabels = {
+            start: '入口', decide: '决策中', select: '选', backtrack: '回溯',
+            skip: '不选', collect: '收集', enter: '刚压栈', returning: '返回'
+        };
+        const phaseClasses = {
+            start: 'p-decide', decide: 'p-decide', select: 'p-select',
+            backtrack: 'p-backtrack', skip: 'p-skip', collect: 'p-collect',
+            enter: 'p-decide', returning: 'p-return'
+        };
+        const framePhaseClasses = {
+            start: 'phase-decide', decide: 'phase-decide', select: 'phase-select',
+            backtrack: 'phase-backtrack', skip: 'phase-skip', collect: 'phase-collect',
+            enter: 'phase-decide', returning: 'phase-return'
+        };
+
+        // 从底到顶渲染（callStack[0] 是最底层帧）
+        stack.forEach((frame, i) => {
+            const div = document.createElement('div');
+            const isNewTop = event.stackAction === 'push' && i === stack.length - 1;
+            div.className = `stack-frame ${framePhaseClasses[frame.phase] || ''}${isNewTop ? ' just-pushed' : ''}`;
+            const currStr = frame.curr.length === 0 ? '[]' : `[${frame.curr.join(', ')}]`;
+            const label = phaseLabels[frame.phase] || frame.phase;
+            const cls = phaseClasses[frame.phase] || 'p-decide';
+            div.innerHTML = `
+                <span class="stack-frame-index">dfs(${frame.index})</span>
+                <span class="stack-frame-info">
+                    <span class="stack-frame-curr">入栈 curr = ${currStr}</span>
+                </span>
+                <span class="stack-frame-phase ${cls}">${label}</span>`;
+            els.stackFrames.appendChild(div);
+        });
+
+        if (event.stackAction === 'pop' && event.poppedFrame) {
+            const ghost = document.createElement('div');
+            const currStr = event.poppedFrame.curr.length === 0 ? '[]' : `[${event.poppedFrame.curr.join(', ')}]`;
+            ghost.className = 'stack-frame popped-ghost phase-return';
+            ghost.innerHTML = `
+                <span class="stack-frame-index">dfs(${event.poppedFrame.index})</span>
+                <span class="stack-frame-info"><span class="stack-frame-curr">入栈 curr = ${currStr}</span></span>
+                <span class="stack-frame-phase p-return">已弹出 ↑</span>`;
+            els.stackFrames.appendChild(ghost);
+        } else if (stack.length === 0) {
+            els.stackFrames.innerHTML = '<span style="color:#b0bccf;font-size:.65rem;font-style:italic;padding:6px">调用栈为空</span>';
+        }
+    }
+
+    // ========== SVG 决策树渲染 ==========
+    function renderTree(event) {
+        const n = nums.length;
+        const svg = els.treeSvg;
+
+        // 计算尺寸
+        const levelCount = n + 2; // 虚拟起点（-1）+ dfs(0..n)
+        const vGap = 54;          // 层间距
+        const nodeR = 14;          // 节点半径
+        const paddingX = 40;
+        const paddingY = 30;
+
+        const maxNodesAtLevel = Math.pow(2, n);
+        const hGap = 48; // 同一层相邻节点间距
+
+        // 从虚拟起点 level -1 到叶子 level n
+        const levels = [];
+        for (let lvl = -1; lvl <= n; lvl++) {
+            const nodesAtLevel = treeNodes.filter(nd => nd.level === lvl);
+            levels.push(nodesAtLevel);
+        }
+
+        const totalWidth = maxNodesAtLevel * hGap + paddingX * 2;
+        const totalHeight = levelCount * vGap + paddingY * 2;
+
+        svg.setAttribute('viewBox', `0 0 ${totalWidth} ${totalHeight}`);
+        svg.style.width = totalWidth + 'px';
+        svg.style.minHeight = totalHeight + 'px';
+        els.treeInner.style.width = totalWidth + 'px';
+        els.treeInner.style.minHeight = totalHeight + 'px';
+
+        svg.innerHTML = '';
+
+        // 添加 defs 用于阴影
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        defs.innerHTML = `
+            <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="shadow"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.15"/></filter>
+        `;
+        svg.appendChild(defs);
+
+        // 定义颜色
+        const colors = {
+            hidden: { fill: '#e8ecf2', stroke: '#d5dbe4', text: '#c0c8d4' },
+            visible: { fill: '#ffffff', stroke: '#bcc5d2', text: '#8793a6' },
+            active: { fill: '#7357e8', stroke: '#7357e8', text: '#ffffff' },
+            collected: { fill: '#16a36a', stroke: '#16a36a', text: '#ffffff' },
+            backtracked: { fill: '#f5a524', stroke: '#f5a524', text: '#ffffff' },
+        };
+
+        // 先画连线
+        levels.forEach((levelNodes, lvl) => {
+            levelNodes.forEach(nd => {
+                if (nd.parentId && getNodeStatus(nd.id) !== 'hidden') {
+                    const parent = findNodeById(nd.parentId);
+                    if (!parent || getNodeStatus(parent.id) === 'hidden') return;
+
+                    const x1 = paddingX + (parent.position + 0.5) * (totalWidth - paddingX * 2) / parent.totalAtLevel;
+                    const y1 = paddingY + (parent.level + 1) * vGap;
+                    const x2 = paddingX + (nd.position + 0.5) * (totalWidth - paddingX * 2) / nd.totalAtLevel;
+                    const y2 = paddingY + (nd.level + 1) * vGap;
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.classList.add('connector');
+                    const status = getNodeStatus(nd.id);
+                    const opacity = status === 'hidden' ? 0 : (status === 'visible' ? 0.35 : 0.7);
+                    const stroke = nd.isInclude === true ? '#2878ff' : (nd.isInclude === false ? '#b0bccf' : '#d5dbe4');
+                    line.setAttribute('stroke', stroke);
+                    line.setAttribute('stroke-width', status === 'active' ? '2' : '1.3');
+                    line.setAttribute('opacity', opacity);
+                    svg.appendChild(line);
+                }
+            });
+        });
+
+        // 再画节点
+        levels.forEach((levelNodes, lvl) => {
+            levelNodes.forEach(nd => {
+                const status = getNodeStatus(nd.id);
+                if (status === 'hidden') return;
+
+                const cx = paddingX + (nd.position + 0.5) * (totalWidth - paddingX * 2) / nd.totalAtLevel;
+                const cy = paddingY + (nd.level + 1) * vGap;
+                const col = colors[status] || colors.visible;
+
+                // 节点圆
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', cx);
+                circle.setAttribute('cy', cy);
+                circle.setAttribute('r', status === 'active' ? nodeR + 2 : nodeR);
+                circle.setAttribute('fill', col.fill);
+                circle.setAttribute('stroke', col.stroke);
+                circle.setAttribute('stroke-width', status === 'active' ? '2.5' : '1.5');
+                circle.classList.add('node-circle');
+                if (status === 'active') circle.setAttribute('filter', 'url(#glow)');
+                svg.appendChild(circle);
+
+                // 如果是叶子节点，显示子集
+                if (nd.isLeaf) {
+                    const subsetText = nd.subset.length === 0 ? '∅' : nd.subset.join(',');
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', cx);
+                    text.setAttribute('y', cy);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'central');
+                    text.setAttribute('fill', col.text);
+                    text.setAttribute('font-size', nd.subset.length <= 3 ? '9' : '7.5');
+                    text.setAttribute('font-weight', '800');
+                    text.classList.add('node-text');
+                    text.textContent = subsetText;
+                    svg.appendChild(text);
+                } else {
+                    // 非叶子：显示元素值
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', cx);
+                    text.setAttribute('y', cy);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'central');
+                    text.setAttribute('fill', col.text);
+                    text.setAttribute('font-size', '11');
+                    text.setAttribute('font-weight', '800');
+                    text.classList.add('node-text');
+                    text.textContent = nd.value !== null ? nd.value : 'S';
+                    svg.appendChild(text);
+                }
+
+                // 分支标签
+                if (nd.isInclude !== null && nd.parentId) {
+                    const parent = findNodeById(nd.parentId);
+                    if (parent && getNodeStatus(parent.id) !== 'hidden') {
+                        const px = paddingX + (parent.position + 0.5) * (totalWidth - paddingX * 2) / parent.totalAtLevel;
+                        const py = paddingY + (parent.level + 1) * vGap;
+                        const mx = (px + cx) / 2;
+                        const my = (py + cy) / 2;
+                        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        label.setAttribute('x', mx);
+                        label.setAttribute('y', my - 2);
+                        label.setAttribute('text-anchor', 'middle');
+                        label.setAttribute('dominant-baseline', 'central');
+                        label.setAttribute('fill', nd.isInclude ? '#2878ff' : '#b0bccf');
+                        label.setAttribute('font-size', '9');
+                        label.setAttribute('font-weight', '700');
+                        label.classList.add('label-text');
+                        label.textContent = nd.isInclude ? '选' : '不选';
+                        if (status !== 'hidden') label.setAttribute('opacity', '0.85');
+                        else label.setAttribute('opacity', '0');
+                        svg.appendChild(label);
+                    }
+                }
+            });
+        });
+
+        // 层标签
+        for (let lvl = -1; lvl <= n; lvl++) {
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', paddingX - 8);
+            label.setAttribute('y', paddingY + (lvl + 1) * vGap);
+            label.setAttribute('text-anchor', 'end');
+            label.setAttribute('dominant-baseline', 'central');
+            label.setAttribute('fill', '#a0aec0');
+            label.setAttribute('font-size', '9');
+            label.setAttribute('font-weight', '700');
+            label.textContent = lvl === -1 ? '起点' : (lvl === n ? '叶子' : `i=${lvl}`);
+            svg.appendChild(label);
+        }
+    }
+
+    function renderSubsets(event) {
+        els.subsetsGrid.innerHTML = '';
+
+        if (collectedSubsets.length === 0) {
+            els.subsetsGrid.innerHTML = '<span style="color:#b0bccf;font-size:.7rem;font-style:italic">尚未收集子集…</span>';
+        } else {
+            collectedSubsets.forEach(sub => {
+                const tag = document.createElement('span');
+                tag.className = 'subset-tag';
+                tag.innerHTML = sub.length === 0
+                    ? '<span class="bracket">[</span> <span class="bracket">]</span>'
+                    : '<span class="bracket">[</span>' + sub.join(', ') + '<span class="bracket">]</span>';
+                els.subsetsGrid.appendChild(tag);
+            });
+        }
+        els.subsetCount.textContent = `${collectedSubsets.length} / ${Math.pow(2, nums.length)}`;
+    }
+
+    function renderDecision(event) {
+        els.decisionResult.classList.remove('collected');
+        if (event.type === 'init') {
+            els.decisionMain.textContent = '调用栈为空，准备调用 dfs(0)';
+            els.decisionResult.textContent = '准备';
+        } else if (event.type === 'call') {
+            els.decisionMain.innerHTML = `<strong>PUSH</strong> dfs(${event.index})，栈深度 = ${event.callStack.length}`;
+            els.decisionResult.textContent = '↓ PUSH';
+        } else if (event.type === 'decide') {
+            els.decisionMain.innerHTML = `dfs(${event.index}) 开始处理 nums[${event.index}]，curr = [${event.curr.join(', ')}]`;
+            els.decisionResult.textContent = '决策';
+        } else if (event.type === 'include') {
+            els.decisionMain.innerHTML = `<strong>选</strong> nums[${event.index}] = ${event.value}，curr += [${event.value}]`;
+            els.decisionResult.textContent = '选';
+        } else if (event.type === 'collect') {
+            els.decisionMain.innerHTML = `到达叶子！<strong>收集</strong> [${event.collected.join(', ')}]`;
+            els.decisionResult.textContent = '✓';
+            els.decisionResult.classList.add('collected');
+        } else if (event.type === 'backtrack') {
+            els.decisionMain.innerHTML = `<strong>回溯</strong>：弹出 ${event.value}，curr = [${event.curr.join(', ')}]`;
+            els.decisionResult.textContent = '←';
+        } else if (event.type === 'exclude') {
+            els.decisionMain.innerHTML = `<strong>不选</strong> nums[${event.index}] = ${event.value}，保持 curr`;
+            els.decisionResult.textContent = '✗';
+        } else if (event.type === 'return') {
+            els.decisionMain.innerHTML = `<strong>POP</strong> dfs(${event.poppedFrame.index})，栈深度 = ${event.callStack.length}`;
+            els.decisionResult.textContent = '↑ POP';
+        } else if (event.type === 'done') {
+            els.decisionMain.innerHTML = `全部完成！共 <strong>${collectedSubsets.length}</strong> 个子集`;
+            els.decisionResult.textContent = '✓';
+            els.decisionResult.classList.add('collected');
+        }
+    }
+
+    function renderCode(lines) {
+        document.querySelectorAll('.code-line').forEach(line => {
+            line.classList.toggle('active', lines.includes(Number(line.dataset.line)));
+        });
+    }
+
+    function renderLogs() {
+        const visibleEvents = events.slice(0, cursor + 1);
+        els.logList.innerHTML = '';
+        visibleEvents.forEach((event, index) => {
+            const item = document.createElement('div');
+            item.className = `log-item ${event.type}${index === cursor ? ' current' : ''}`;
+            const typeNames = {
+                init: '初始化', call: '递归调用 · PUSH', decide: '处理栈顶帧',
+                include: '选择元素', collect: '收集子集', backtrack: '回溯撤销',
+                exclude: '跳过元素', return: '函数返回 · POP', done: '完成'
+            };
+            item.innerHTML = `
+                <div class="log-seq">${String(index).padStart(2, '0')}</div>
+                <div>
+                    <div class="log-type">${typeNames[event.type] || event.type}</div>
+                    <div class="log-message">${event.message}</div>
+                </div>`;
+            els.logList.appendChild(item);
+        });
+        requestAnimationFrame(() => { els.logList.scrollTop = els.logList.scrollHeight; });
+    }
+
+    function renderProgress() {
+        const total = Math.max(events.length - 1, 1);
+        const percent = Math.min(100, (cursor / total) * 100);
+        els.progressFill.style.width = `${percent}%`;
+        els.progressText.textContent = `${cursor} / ${events.length - 1}`;
+    }
+
+    function updateControls() {
+        els.prevBtn.disabled = cursor <= 0;
+        els.nextBtn.disabled = cursor >= events.length - 1;
+        els.autoBtn.disabled = false;
+        if (!timer) {
+            const atEnd = events.length > 0 && cursor >= events.length - 1;
+            els.autoBtn.textContent = atEnd ? '↻ 重新播放' : '▶ 自动播放';
+        }
+    }
+
+    // ========== 导航 ==========
+    function nextStep() {
+        if (cursor < events.length - 1) {
+            cursor += 1;
+            render();
+        }
+        if (cursor >= events.length - 1) stopAuto();
+    }
+
+    function previousStep() {
+        stopAuto();
+        if (cursor > 0) {
+            cursor -= 1;
+            render();
+        }
+    }
+
+    function rebuildAllState() {
+        nodeStateMap = {};
+        collectedSubsets = [];
+        for (let i = 0; i <= cursor; i++) {
+            const ev = events[i];
+            if (ev.type === 'collect') {
+                const exists = collectedSubsets.some(s =>
+                    s.length === ev.collected.length &&
+                    s.every((v, j) => v === ev.collected[j])
+                );
+                if (!exists) collectedSubsets.push([...ev.collected]);
+            }
+            applyEventToNodeState(ev);
+        }
+    }
+
+    function applyEventToNodeState(event) {
+        Object.keys(nodeStateMap).forEach(id => {
+            if (nodeStateMap[id] === 'active') nodeStateMap[id] = 'visible';
+        });
+        if (event.type === 'init') {
+            setNodeStatus('root', 'active');
+            const level0 = findNodeById('level0');
+            if (level0) setNodeStatus('level0', 'visible');
+        }
+        if (event.type === 'call' || event.type === 'decide' || event.type === 'include' || event.type === 'exclude') {
+            const depth = (event.type === 'include' || event.type === 'exclude') ? event.depth : event.index;
+            markPathNodes(event.curr, depth, event.type);
+        }
+        if (event.type === 'collect') {
+            const leaf = findLeafNode(event.collected);
+            if (leaf) setNodeStatus(leaf.id, 'collected');
+        }
+        if (event.type === 'backtrack') {
+            markPathNodes(event.curr, event.index, 'backtrack');
+        }
+        if (event.type === 'return' && event.poppedFrame) {
+            const poppedNode = findNodeBySubset(event.poppedFrame.curr, event.poppedFrame.index);
+            if (poppedNode && getNodeStatus(poppedNode.id) !== 'collected') {
+                setNodeStatus(poppedNode.id, 'backtracked');
+            }
+            const caller = event.callStack[event.callStack.length - 1];
+            if (caller) markPathNodes(caller.curr, caller.index, 'call');
+        }
+    }
+
+    function toggleAuto() {
+        if (timer) { stopAuto(); return; }
+        if (cursor >= events.length - 1) {
+            cursor = 0;
+            nodeStateMap = {};
+            collectedSubsets = [];
+            setNodeStatus('root', 'active');
+            const level0 = findNodeById('level0');
+            if (level0) setNodeStatus('level0', 'visible');
+            render();
+        }
+        els.autoBtn.textContent = 'Ⅱ 暂停';
+        els.autoBtn.classList.add('running');
+        timer = window.setInterval(nextStep, speedOptions[speedIndex].delay);
+        nextStep();
+    }
+
+    function stopAuto() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        els.autoBtn.classList.remove('running');
+        updateControls();
+    }
+
+    function cycleSpeed() {
+        speedIndex = (speedIndex + 1) % speedOptions.length;
+        els.speedBtn.textContent = speedOptions[speedIndex].label;
+        if (timer) {
+            window.clearInterval(timer);
+            timer = window.setInterval(nextStep, speedOptions[speedIndex].delay);
+        }
+    }
+
+    function randomize() {
+        const length = 2 + Math.floor(Math.random() * 3);
+        const pool = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const values = pool.slice(0, length).sort((a, b) => a - b);
+        els.input.value = values.join(', ');
+        resetVisualization();
+    }
+
+    els.resetBtn.addEventListener('click', resetVisualization);
+    els.randomBtn.addEventListener('click', randomize);
+    els.prevBtn.addEventListener('click', previousStep);
+    els.nextBtn.addEventListener('click', nextStep);
+    els.autoBtn.addEventListener('click', toggleAuto);
+    els.speedBtn.addEventListener('click', cycleSpeed);
+    els.input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') resetVisualization();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); nextStep(); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); previousStep(); }
+        if (e.key === ' ') { e.preventDefault(); toggleAuto(); }
+    });
+
+    resetVisualization();
+</script>
+</body>
+</html>
